@@ -1,0 +1,434 @@
+'use client';
+
+import {
+  useCreateUploadMutation,
+  useForceDeleteUploadsMutation,
+  useGetRolesQuery,
+  useGetUserQuery,
+  useUpdateUserMutation,
+} from '@/state/api';
+import { CreateOrUpdateUserFormValues } from '@/types/formik';
+import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import * as Yup from 'yup';
+import { useFormik, FormikHelpers } from 'formik';
+import { useEffect, useState } from 'react';
+import { ResponseError } from '@/types/response';
+import { ImagePlus } from 'lucide-react';
+import Image from 'next/image';
+import { optimizeBase64 } from '@/utils/image';
+import axios from 'axios';
+import { useAppDispatch, useAppSelector } from '@/app/redux';
+import { setUserLogin } from '@/state';
+import { useFetchFile } from '@/app/hooks/useFetchFile';
+import { removeFileExtension } from '@/utils/common';
+
+const Page = () => {
+  const dispatch = useAppDispatch();
+  const userLogin = useAppSelector((state) => state.global.userLogin);
+  const { id } = useParams();
+  const { data: userData, isLoading: isUserLoading } = useGetUserQuery({ userId: id as string });
+  const { data: rolesData } = useGetRolesQuery();
+  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+  const [createUpload, { isLoading: isCreateUpload }] = useCreateUploadMutation();
+  const [deleteUpload, { isLoading: isDeleteUpload }] = useForceDeleteUploadsMutation();
+  const token = useAppSelector((state) => state.global.token);
+  const router = useRouter();
+  const { fileUrl } = useFetchFile(
+    userData?.data.avatarId ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${userData?.data.avatarId}` : null,
+    token as string
+  );
+
+  // Initial values
+  const initialValues: CreateOrUpdateUserFormValues = {
+    username: '',
+    email: '',
+    name: '',
+    phone: '',
+    address: '',
+    roleId: '',
+    avatarId: '',
+    publicId: '',
+  };
+
+  // Validation schema with Yup
+  const validationSchema = Yup.object({
+    username: Yup.string().required('Username is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    name: Yup.string().required('Name is required'),
+    phone: Yup.string(),
+    address: Yup.string(),
+    roleId: Yup.string().required('Role is required'),
+    avatarId: Yup.string(),
+    publicId: Yup.string(),
+  });
+
+  // Avatar state
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  const [deletedAvatars, setDeletedAvatars] = useState<{ avatarId: string; publicId: string }[]>([]);
+
+  const handleFileUpload = async (file: File, base64Image: string) => {
+    try {
+      const optimizedBase64Image = await optimizeBase64(base64Image);
+      const payload = { file, image: optimizedBase64Image, folder: 'users', prefix: 'users' };
+
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/cloudinary/upload-image`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success) {
+        const responseUpload = await createUpload({
+          category: 'users',
+          extension: file.type.split('/')[1],
+          filename: `${response.data.data.public_id}.${file.type.split('/')[1]}`,
+          filenameOrigin: file.name,
+          mime: file.type,
+          path: response.data.data.url,
+          size: file.size,
+          type: 'image',
+        }).unwrap();
+
+        if (responseUpload.success)
+          return { uploadId: responseUpload.data.uploadId, publicId: response.data.data.public_id };
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (error) {
+      const err = error as ResponseError;
+      const errorMessage =
+        err.data?.message || (error as Error).message?.replace(/^Error:\s*/, '') || 'Something went wrong';
+
+      toast.error('Action failed: ' + errorMessage);
+      return null;
+    }
+  };
+
+  const handleFileChange = async (file: File) => {
+    if (file) {
+      if (formik.values.avatarId) {
+        setDeletedAvatars((prev) => {
+          if (formik.values.avatarId) {
+            return [...prev, { avatarId: formik.values.avatarId, publicId: formik.values.publicId as string }];
+          }
+          return prev;
+        });
+      }
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Image = reader.result as string;
+        setAvatarPreview(base64Image);
+
+        const uploadedUrl = await handleFileUpload(file, base64Image);
+
+        if (uploadedUrl) {
+          formik.setFieldValue('avatarId', uploadedUrl.uploadId);
+          formik.setFieldValue('publicId', uploadedUrl.publicId);
+        }
+      };
+
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = e.dataTransfer.files;
+    if (files.length) handleFileChange(files[0]);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleSubmit = async (
+    values: CreateOrUpdateUserFormValues,
+    { setSubmitting }: FormikHelpers<CreateOrUpdateUserFormValues>
+  ) => {
+    try {
+      const dataToSend = {
+        userId: id as string,
+        username: values.username,
+        name: values.name,
+        email: values.email,
+        address: values.address,
+        phone: values.phone,
+        roleId: values.roleId,
+        avatarId: values.avatarId,
+        password: values.password,
+      };
+
+      const response = await updateUser(dataToSend).unwrap();
+
+      if (deletedAvatars.length > 0) {
+        await Promise.all(
+          deletedAvatars.map(async (avatar) => {
+            await axios.post(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/cloudinary/remove-image`,
+              { public_id: avatar.publicId },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          })
+        );
+
+        await deleteUpload({
+          ids: deletedAvatars.map((avatar) => avatar.avatarId),
+        }).unwrap();
+      }
+
+      if (response.success) {
+        if (response.data.userId === userLogin?.userId) {
+          dispatch(setUserLogin(response.data));
+        }
+        toast.success(response.message || 'User updated successfully!');
+        setDeletedAvatars([]);
+        router.push('/dashboard/users');
+      } else {
+        throw new Error(response.message);
+      }
+    } catch (error) {
+      const err = error as ResponseError;
+      const errorMessage =
+        err.data?.message || (error as Error).message?.replace(/^Error:\s*/, '') || 'Something went wrong';
+
+      toast.error('Action failed: ' + errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Formik setup
+  const formik = useFormik<CreateOrUpdateUserFormValues>({
+    initialValues,
+    validationSchema,
+    enableReinitialize: true,
+    onSubmit: handleSubmit,
+  });
+
+  useEffect(() => {
+    if (userData) {
+      formik.setValues({
+        username: userData.data.username || '',
+        email: userData.data.email || '',
+        name: userData.data.name || '',
+        phone: userData.data.phone || '',
+        address: userData.data.address || '',
+        roleId: userData.data.roleId || '',
+        avatarId: userData.data.avatarId || '',
+        publicId: userData?.data?.avatar?.filename ? removeFileExtension(userData.data.avatar.filename) : '',
+      });
+      if (userData.data.avatarId) setAvatarPreview(fileUrl);
+    }
+  }, [userData, fileUrl]);
+
+  if (isUserLoading) return <p>Loading user data...</p>;
+
+  return (
+    <div>
+      <h2 className='text-2xl font-semibold mb-4'>Edit User</h2>
+      <form onSubmit={formik.handleSubmit} className='bg-white shadow-md rounded-lg p-6'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Name</label>
+            <input
+              type='text'
+              name='name'
+              value={formik.values.name}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                formik.touched.name && formik.errors.name ? 'border-red-500' : ''
+              }`}
+            />
+            {formik.touched.name && formik.errors.name ? (
+              <p className='text-red-500 text-sm'>{formik.errors.name}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Username</label>
+            <input
+              type='text'
+              name='username'
+              value={formik.values.username}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                formik.touched.username && formik.errors.username ? 'border-red-500' : ''
+              }`}
+            />
+            {formik.touched.username && formik.errors.username ? (
+              <p className='text-red-500 text-sm'>{formik.errors.username}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Email</label>
+            <input
+              type='email'
+              name='email'
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                formik.touched.email && formik.errors.email ? 'border-red-500' : ''
+              }`}
+            />
+            {formik.touched.email && formik.errors.email ? (
+              <p className='text-red-500 text-sm'>{formik.errors.email}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Password</label>
+            <input
+              type='password'
+              name='password'
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                formik.touched.password && formik.errors.password ? 'border-red-500' : ''
+              }`}
+            />
+            {formik.touched.password && formik.errors.password ? (
+              <p className='text-red-500 text-sm'>{formik.errors.password}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Phone</label>
+            <input
+              type='text'
+              name='phone'
+              value={formik.values.phone}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                formik.touched.phone && formik.errors.phone ? 'border-red-500' : ''
+              }`}
+            />
+            {formik.touched.phone && formik.errors.phone ? (
+              <p className='text-red-500 text-sm'>{formik.errors.phone}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Address</label>
+            <input
+              type='text'
+              name='address'
+              value={formik.values.address}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                formik.touched.address && formik.errors.address ? 'border-red-500' : ''
+              }`}
+            />
+            {formik.touched.address && formik.errors.address ? (
+              <p className='text-red-500 text-sm'>{formik.errors.address}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Role</label>
+            <select
+              name='roleId'
+              value={formik.values.roleId}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                formik.touched.roleId && formik.errors.roleId ? 'border-red-500' : ''
+              }`}
+            >
+              <option value='' className='text-gray-900 border-2 border-gray-300 bg-white' disabled>
+                Select a role
+              </option>
+              {rolesData?.data.map((role) => (
+                <option
+                  key={role.roleId}
+                  value={role.roleId}
+                  className='text-gray-700 border-2 border-gray-300 bg-white'
+                >
+                  {role.name}
+                </option>
+              ))}
+            </select>
+            {formik.touched.roleId && formik.errors.roleId && (
+              <p className='text-red-500 text-sm'>{formik.errors.roleId}</p>
+            )}
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Avatar</label>
+            <div
+              className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md ${
+                isDragOver ? 'border-blue-500 bg-blue-100' : ''
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <div className='space-y-1 text-center'>
+                <div className='flex justify-center items-center'>
+                  {avatarPreview ? (
+                    <div className='relative w-40 h-40 mb-4'>
+                      <Image
+                        src={avatarPreview}
+                        alt='Avatar Preview'
+                        className='w-full h-full object-cover'
+                        width={200}
+                        height={200}
+                      />
+                    </div>
+                  ) : (
+                    <ImagePlus className='w-12 h-12 text-gray-400' />
+                  )}
+                </div>
+                <div className='flex items-center text-sm text-gray-600'>
+                  <label
+                    htmlFor='file-upload'
+                    className={`relative cursor-pointer bg-blue-500 rounded-md font-medium text-white p-1 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500
+    ${isCreateUpload || isUpdating || isDeleteUpload ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                  >
+                    <span>{avatarPreview ? 'Change' : 'Upload'} a file</span>
+                    <input
+                      id='file-upload'
+                      name='file-upload'
+                      type='file'
+                      className='sr-only'
+                      accept='image/jpeg, image/png, image/jpg'
+                      onChange={(e) => handleFileChange(e.target.files?.[0] as File)}
+                      disabled={isCreateUpload || isUpdating || isDeleteUpload}
+                    />
+                  </label>
+                  <p className='pl-1 text-gray-500'>or drag and drop</p>
+                </div>
+                <p className='text-xs text-gray-500'>PNG, JPG up to 2MB</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className='mt-6 flex justify-end'>
+          <button
+            type='submit'
+            disabled={isUpdating || formik.isSubmitting || isCreateUpload || isDeleteUpload}
+            className='bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 disabled:opacity-50'
+          >
+            {isUpdating ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default Page;
