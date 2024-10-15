@@ -74,13 +74,10 @@ const Navbar = () => {
         if (uuidRegex.test(value)) {
           const entityType = pathArray[index - 1]?.toLowerCase();
           isLast = index === pathArray.length - 1 || index === pathArray.length - 2;
-          console.log(entityType);
 
           if (entityType === 'users') {
             const user = await fetchUserById(value, token as string);
             label = user.data.name || label;
-            console.log(user, 'user');
-            console.log(label, 'label');
           }
         }
 
@@ -155,23 +152,16 @@ const Navbar = () => {
         <hr className='w-0 h-7 border-solid border-l border-gray-300 mx-3 hidden sm:block' />
         <div className='relative' ref={dropdownRef}>
           <div className='flex items-center gap-3 cursor-pointer' onClick={toggleDropdown}>
-            {fileUrl ? (
-              <Image
-                src={fileUrl}
-                alt='avatar'
-                width={100}
-                height={100}
-                className='rounded-full w-9 h-9 object-cover object-center'
-              />
-            ) : (
-              <Image
-                src='https://res.cloudinary.com/dz5jq5jds/image/upload/v1661375653/inventory-app/m0vrgvjze72wxgqqsrad.png'
-                alt='avatar'
-                width={100}
-                height={100}
-                className='rounded-full w-9 h-9 object-cover object-center'
-              />
-            )}
+            <Image
+              src={
+                fileUrl ||
+                'https://res.cloudinary.com/dz5jq5jds/image/upload/v1661375653/inventory-app/m0vrgvjze72wxgqqsrad.png'
+              }
+              alt='avatar'
+              width={100}
+              height={100}
+              className='rounded-full w-9 h-9 object-cover object-center'
+            />
             <span className='font-semibold hidden sm:block'>{userLogin?.name}</span>
           </div>
 

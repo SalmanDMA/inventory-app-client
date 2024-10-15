@@ -1,28 +1,43 @@
 import {
+  CreateOrUpdateBrandFormValues,
+  CreateOrUpdateCategoryFormValues,
   CreateOrUpdateModuleFormValues,
   CreateOrUpdateModuleTypeFormValues,
+  CreateOrUpdateProductFormValues,
   CreateOrUpdateRoleFormValues,
+  CreateOrUpdateSupplierFormValues,
   CreateOrUpdateUploadFormValues,
   CreateOrUpdateUserFormValues,
+  CreateOrUpdateWarehouseFormValues,
 } from '@/types/formik';
 import {
   ResponseAuth,
+  ResponseBrand,
+  ResponseBrands,
+  ResponseCategories,
+  ResponseCategory,
   ResponseModule,
   ResponseModules,
   ResponseModuleType,
   ResponseModuleTypes,
+  ResponseProduct,
+  ResponseProducts,
   ResponseRole,
   ResponseRoleModule,
   ResponseRoleModules,
   ResponseRoles,
+  ResponseSupplier,
+  ResponseSuppliers,
   ResponseUpload,
   ResponseUploads,
   ResponseUser,
   ResponseUsers,
+  ResponseWarehouse,
+  ResponseWarehouses,
 } from '@/types/response';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { GlobalStateTypes } from '@/types/state';
-import { DashboardMetrics, NewProduct, Product } from '@/types/model';
+import { DashboardMetrics } from '@/types/model';
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -51,6 +66,10 @@ export const api = createApi({
     'Modules',
     'RoleModules',
     'ModuleTypes',
+    'Warehouses',
+    'Categories',
+    'Brands',
+    'Suppliers',
   ],
   endpoints: (build) => ({
     getDashboardMetrics: build.query<DashboardMetrics, void>({
@@ -58,19 +77,57 @@ export const api = createApi({
       providesTags: ['DashboardMetrics'],
     }),
 
-    getProducts: build.query<Product[], string | void>({
-      query: (search) => ({
-        url: '/products',
-        params: search ? { search } : {},
-      }),
+    getProducts: build.query<ResponseProducts, void>({
+      query: () => '/products',
       providesTags: ['Products'],
     }),
 
-    createProduct: build.mutation<Product, NewProduct>({
-      query: (newProduct) => ({
+    getProduct: build.query<ResponseProduct, { productId: string }>({
+      query: ({ productId }) => `/products/${productId}`,
+      providesTags: ['Products'],
+    }),
+
+    createProduct: build.mutation<ResponseProduct, CreateOrUpdateProductFormValues>({
+      query: (data) => ({
         url: '/products',
         method: 'POST',
-        body: newProduct,
+        body: data,
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
+    updateProduct: build.mutation<ResponseProduct, CreateOrUpdateProductFormValues>({
+      query: (data) => ({
+        url: `/products/${data.productId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
+    softDeleteProducts: build.mutation<ResponseProduct, { ids: string[] }>({
+      query: (data) => ({
+        url: '/products/soft-delete',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
+    restoreProducts: build.mutation<ResponseProduct, { ids: string[] }>({
+      query: (data) => ({
+        url: '/products/restore',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
+    forceDeleteProducts: build.mutation<ResponseProduct, { ids: string[] }>({
+      query: (data) => ({
+        url: '/products/force-delete',
+        method: 'PUT',
+        body: data,
       }),
       invalidatesTags: ['Products'],
     }),
@@ -422,6 +479,230 @@ export const api = createApi({
       }),
       invalidatesTags: ['Roles', 'Modules', 'RoleModules'],
     }),
+
+    // Warehouse
+    getWarehouses: build.query<ResponseWarehouses, void>({
+      query: () => '/warehouses',
+      providesTags: ['Warehouses'],
+    }),
+
+    getWarehouse: build.query<ResponseWarehouse, { warehouseId: string }>({
+      query: ({ warehouseId }) => `/warehouses/${warehouseId}`,
+      providesTags: ['Warehouses'],
+    }),
+
+    createWarehouse: build.mutation<ResponseWarehouse, CreateOrUpdateWarehouseFormValues>({
+      query: (data) => ({
+        url: '/warehouses',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Warehouses'],
+    }),
+
+    updateWarehouse: build.mutation<ResponseWarehouse, CreateOrUpdateWarehouseFormValues>({
+      query: (data) => ({
+        url: `/warehouses/${data.warehouseId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Warehouses'],
+    }),
+
+    softDeleteWarehouses: build.mutation<ResponseWarehouse, { ids: string[] }>({
+      query: (data) => ({
+        url: '/warehouses/soft-delete',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Warehouses'],
+    }),
+
+    forceDeleteWarehouses: build.mutation<ResponseWarehouse, { ids: string[] }>({
+      query: (data) => ({
+        url: '/warehouses/force-delete',
+        method: 'DELETE',
+        body: data,
+      }),
+      invalidatesTags: ['Warehouses'],
+    }),
+
+    restoreWarehouses: build.mutation<ResponseWarehouse, { ids: string[] }>({
+      query: (data) => ({
+        url: '/warehouses/restore',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Warehouses'],
+    }),
+
+    // Category
+    getCategories: build.query<ResponseCategories, void>({
+      query: () => '/categories',
+      providesTags: ['Categories'],
+    }),
+
+    getCategory: build.query<ResponseCategory, { categoryId: string }>({
+      query: ({ categoryId }) => `/categories/${categoryId}`,
+      providesTags: ['Categories'],
+    }),
+
+    createCategory: build.mutation<ResponseCategory, CreateOrUpdateCategoryFormValues>({
+      query: (data) => ({
+        url: '/categories',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Categories'],
+    }),
+
+    updateCategory: build.mutation<ResponseCategory, CreateOrUpdateCategoryFormValues>({
+      query: (data) => ({
+        url: `/categories/${data.categoryId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Categories'],
+    }),
+
+    softDeleteCategories: build.mutation<ResponseCategory, { ids: string[] }>({
+      query: (data) => ({
+        url: '/categories/soft-delete',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Categories'],
+    }),
+
+    forceDeleteCategories: build.mutation<ResponseCategory, { ids: string[] }>({
+      query: (data) => ({
+        url: '/categories/force-delete',
+        method: 'DELETE',
+        body: data,
+      }),
+      invalidatesTags: ['Categories'],
+    }),
+
+    restoreCategories: build.mutation<ResponseCategory, { ids: string[] }>({
+      query: (data) => ({
+        url: '/categories/restore',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Categories'],
+    }),
+
+    // Brand
+    getBrands: build.query<ResponseBrands, void>({
+      query: () => '/brands',
+      providesTags: ['Brands'],
+    }),
+
+    getBrand: build.query<ResponseBrand, { brandId: string }>({
+      query: ({ brandId }) => `/brands/${brandId}`,
+      providesTags: ['Brands'],
+    }),
+
+    createBrand: build.mutation<ResponseBrand, CreateOrUpdateBrandFormValues>({
+      query: (data) => ({
+        url: '/brands',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Brands'],
+    }),
+
+    updateBrand: build.mutation<ResponseBrand, CreateOrUpdateBrandFormValues>({
+      query: (data) => ({
+        url: `/brands/${data.brandId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Brands'],
+    }),
+
+    softDeleteBrands: build.mutation<ResponseBrand, { ids: string[] }>({
+      query: (data) => ({
+        url: '/brands/soft-delete',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Brands'],
+    }),
+
+    forceDeleteBrands: build.mutation<ResponseBrand, { ids: string[] }>({
+      query: (data) => ({
+        url: '/brands/force-delete',
+        method: 'DELETE',
+        body: data,
+      }),
+      invalidatesTags: ['Brands'],
+    }),
+
+    restoreBrands: build.mutation<ResponseBrand, { ids: string[] }>({
+      query: (data) => ({
+        url: '/brands/restore',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Brands'],
+    }),
+
+    // Supplier
+    getSuppliers: build.query<ResponseSuppliers, void>({
+      query: () => '/suppliers',
+      providesTags: ['Suppliers'],
+    }),
+
+    getSupplier: build.query<ResponseSupplier, { supplierId: string }>({
+      query: ({ supplierId }) => `/suppliers/${supplierId}`,
+      providesTags: ['Suppliers'],
+    }),
+
+    createSupplier: build.mutation<ResponseSupplier, CreateOrUpdateSupplierFormValues>({
+      query: (data) => ({
+        url: '/suppliers',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Suppliers'],
+    }),
+
+    updateSupplier: build.mutation<ResponseSupplier, CreateOrUpdateSupplierFormValues>({
+      query: (data) => ({
+        url: `/suppliers/${data.supplierId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Suppliers'],
+    }),
+
+    softDeleteSuppliers: build.mutation<ResponseSupplier, { ids: string[] }>({
+      query: (data) => ({
+        url: '/suppliers/soft-delete',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Suppliers'],
+    }),
+
+    forceDeleteSuppliers: build.mutation<ResponseSupplier, { ids: string[] }>({
+      query: (data) => ({
+        url: '/suppliers/force-delete',
+        method: 'DELETE',
+        body: data,
+      }),
+      invalidatesTags: ['Suppliers'],
+    }),
+
+    restoreSuppliers: build.mutation<ResponseSupplier, { ids: string[] }>({
+      query: (data) => ({
+        url: '/suppliers/restore',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Suppliers'],
+    }),
   }),
 });
 
@@ -429,7 +710,12 @@ export const api = createApi({
 export const {
   useGetDashboardMetricsQuery,
   useGetProductsQuery,
+  useGetProductQuery,
   useCreateProductMutation,
+  useUpdateProductMutation,
+  useSoftDeleteProductsMutation,
+  useForceDeleteProductsMutation,
+  useRestoreProductsMutation,
   useGetUsersQuery,
   useLoginMutation,
   useForgotPasswordMutation,
@@ -473,4 +759,32 @@ export const {
   useSoftDeleteModuleTypesMutation,
   useForceDeleteModuleTypesMutation,
   useRestoreModuleTypesMutation,
+  useGetWarehousesQuery,
+  useGetWarehouseQuery,
+  useCreateWarehouseMutation,
+  useUpdateWarehouseMutation,
+  useSoftDeleteWarehousesMutation,
+  useForceDeleteWarehousesMutation,
+  useRestoreWarehousesMutation,
+  useGetCategoriesQuery,
+  useGetCategoryQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useForceDeleteCategoriesMutation,
+  useRestoreCategoriesMutation,
+  useSoftDeleteCategoriesMutation,
+  useGetBrandsQuery,
+  useGetBrandQuery,
+  useCreateBrandMutation,
+  useUpdateBrandMutation,
+  useSoftDeleteBrandsMutation,
+  useForceDeleteBrandsMutation,
+  useRestoreBrandsMutation,
+  useGetSuppliersQuery,
+  useGetSupplierQuery,
+  useCreateSupplierMutation,
+  useUpdateSupplierMutation,
+  useSoftDeleteSuppliersMutation,
+  useForceDeleteSuppliersMutation,
+  useRestoreSuppliersMutation,
 } = api;

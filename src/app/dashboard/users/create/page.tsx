@@ -224,7 +224,9 @@ const Page = () => {
       <form onSubmit={formik.handleSubmit} className='bg-white shadow-md rounded-lg p-6'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <div>
-            <label className='block text-sm font-medium text-gray-700'>Name</label>
+            <label className='block text-sm font-medium text-gray-700'>
+              Name<span className='text-red-500'>*</span>
+            </label>
             <input
               type='text'
               name='name'
@@ -241,7 +243,9 @@ const Page = () => {
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700'>Username</label>
+            <label className='block text-sm font-medium text-gray-700'>
+              Username<span className='text-red-500'>*</span>
+            </label>
             <input
               type='text'
               name='username'
@@ -258,7 +262,9 @@ const Page = () => {
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700'>Email</label>
+            <label className='block text-sm font-medium text-gray-700'>
+              Email<span className='text-red-500'>*</span>
+            </label>
             <input
               type='email'
               name='email'
@@ -275,7 +281,9 @@ const Page = () => {
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700'>Password</label>
+            <label className='block text-sm font-medium text-gray-700'>
+              Password<span className='text-red-500'>*</span>
+            </label>
             <input
               type='password'
               name='password'
@@ -326,7 +334,9 @@ const Page = () => {
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700'>Role</label>
+            <label className='block text-sm font-medium text-gray-700'>
+              Role<span className='text-red-500'>*</span>
+            </label>
             <select
               name='roleId'
               value={formik.values.roleId}

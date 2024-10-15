@@ -4,35 +4,31 @@ import HeaderWithFilterMenu from '@/app/(components)/Header/WithFilterMenu';
 import MenuAction from '@/app/(components)/Menu/Action';
 import MenuContext from '@/app/(components)/Menu/Context';
 import Confirmation from '@/app/(components)/Modal/Confirmation';
-import ModuleForm from '@/app/(components)/Modal/ModuleForm';
 import { useFilterStatusData } from '@/app/hooks/useFilterStatusData';
 import { useMenu } from '@/app/hooks/useMenu';
 import useModal from '@/app/hooks/useModal';
 import { useSearchQuery } from '@/app/hooks/useSearchQuery';
 import {
-  useForceDeleteModulesMutation,
-  useGetModulesQuery,
-  useRestoreModulesMutation,
-  useSoftDeleteModulesMutation,
+  useForceDeleteWarehousesMutation,
+  useGetWarehousesQuery,
+  useRestoreWarehousesMutation,
+  useSoftDeleteWarehousesMutation,
 } from '@/state/api';
-import { IModule } from '@/types/model';
+import { IUser, IWarehouse } from '@/types/model';
 import { ResponseError } from '@/types/response';
-import { buildModuleTree, getModelIdsToHandle, getRowClassName } from '@/utils/common';
+import { getModelIdsToHandle, getRowClassName } from '@/utils/common';
 import { Box } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from '@mui/x-data-grid';
-import * as lucideIcons from 'lucide-react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { MoreVerticalIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import WarehouseForm from '@/app/(components)/Modal/WarehouseFrom';
 
-const Modules = () => {
-  const { data: modules, isError, isLoading } = useGetModulesQuery();
-  const [modulesTree, setModulesTree] = useState<IModule[]>([]);
-  const [openModules, setOpenModules] = useState<{ [key: string]: boolean }>({});
-
-  const [softDeletes, { isLoading: isSoftDeleting }] = useSoftDeleteModulesMutation();
-  const [forceDeletes, { isLoading: isForceDeleting }] = useForceDeleteModulesMutation();
-  const [restoreModules, { isLoading: isRestoring }] = useRestoreModulesMutation();
+const Warehouses = () => {
+  const { data: warehouses, isError, isLoading } = useGetWarehousesQuery();
+  const [softDeletes, { isLoading: isSoftDeleting }] = useSoftDeleteWarehousesMutation();
+  const [forceDeletes, { isLoading: isForceDeleting }] = useForceDeleteWarehousesMutation();
+  const [restoreWarehouses, { isLoading: isRestoring }] = useRestoreWarehousesMutation();
 
   const { isModalOpen, isAnimationModalOpen, openModal, closeModal } = useModal();
   const {
@@ -51,76 +47,54 @@ const Modules = () => {
   const { searchQuery, handleSearchQuery } = useSearchQuery();
   const { filterStatus, isFilterOpen, filterRef, handleFilterStatus, setIsFilterOpen } = useFilterStatusData();
 
-  const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([]);
-  const [selectedModuleDeletedAt, setSelectedModuleDeletedAt] = useState<string[]>([]);
-  const [currentModule, setCurrentModule] = useState<IModule | null>(null);
+  const [selectedWarehouseIds, setSelectedWarehouseIds] = useState<string[]>([]);
+  const [selectedWarehouseDeletedAt, setSelectedWarehouseDeletedAt] = useState<string[]>([]);
+  const [currentWarehouse, setCurrentWarehouse] = useState<IWarehouse | null>(null);
 
   const columns: GridColDef[] = [
     {
-      field: 'name',
-      headerName: 'Module Name',
-      width: 300,
-      flex: 1,
+      field: 'status',
+      headerName: 'Status',
+      width: 120,
+      headerAlign: 'center',
+      align: 'center',
       renderCell: (params) => {
-        const mod = params.row;
-        const isOpen = openModules[mod.moduleId];
-        const hasChildren = mod.childModules && mod.childModules.length > 0;
-
         return (
-          <div className='flex items-center'>
-            {hasChildren && (
-              <button onClick={() => toggleOpenModule(mod.moduleId)} aria-label='Toggle Submodules' className='mr-2'>
-                {isOpen ? <ChevronDown /> : <ChevronRight />}
-              </button>
-            )}
-            <span>{mod.name}</span>
-          </div>
+          <span
+            className='inline-flex justify-center items-center px-2 py-1 rounded-md text-white max-w-max h-max max-h-[20px] text-xs font-bold'
+            style={{ backgroundColor: params.row.status === 'AVAILABLE' ? 'green' : 'red' }}
+            title={params.row.status}
+          >
+            {params.row.status}
+          </span>
         );
       },
-    },
-    {
-      field: 'icon',
-      headerName: 'Icon',
-      resizable: false,
-      filterable: false,
-      sortable: false,
-      width: 100,
-      renderCell: (params) => {
-        const mod = params.row;
-
-        if (!mod.icon) {
-          return null;
-        }
-
-        const IconComponent = lucideIcons[mod.icon as keyof typeof lucideIcons] as React.ElementType;
-
-        if (!IconComponent) {
-          return null;
-        }
-
-        return (
-          <div className='w-full h-full flex flex-col gap-2 items-start justify-center'>
-            <IconComponent className='w-6 h-6' />
-          </div>
-        );
+      valueGetter: (params) => {
+        return params;
       },
     },
+    { field: 'name', headerName: 'Name', width: 200, flex: 1 },
+    { field: 'location', headerName: 'Location', width: 200, flex: 1 },
     {
-      field: 'description',
-      headerName: 'Description',
-      width: 250,
-      flex: 1,
-      renderCell: (params) => <span>{params.row.description}</span>,
-    },
-    {
-      field: 'route',
-      headerName: 'Route',
+      field: 'pic',
+      headerName: 'PIC',
       width: 200,
-      resizable: false,
-      filterable: false,
-      sortable: false,
-      renderCell: (params) => <span>{params.row.route ? `${params.row.route}` : '-'}</span>,
+      flex: 1,
+      renderCell: (params) => {
+        return (
+          <span
+            className='inline-flex justify-start items-center rounded-md text-grey-900 max-w-max h-max max-h-[20px]'
+            title={params.row.pic.name}
+          >
+            {params.row.pic.name}
+          </span>
+        );
+      },
+      valueGetter: (params: IUser) => {
+        return params.name;
+      },
     },
+    { field: 'capacity', headerName: 'Capacity', width: 200, flex: 1, align: 'center', headerAlign: 'center' },
     {
       field: 'actions',
       headerName: 'Actions',
@@ -139,58 +113,50 @@ const Modules = () => {
             onClick={(event) => {
               handleCloseActionTable();
               handleActionTableClick(event, params.id.toString());
-              setCurrentModule(params.row);
+              setCurrentWarehouse(params.row);
             }}
           >
-            <lucideIcons.MoreVerticalIcon />
+            <MoreVerticalIcon />
           </div>
         );
       },
     },
   ];
 
-  // Flatten the tree while keeping the module structure
-  const flattenTree = (moduleTree: IModule[], parentId: string | null = null): IModule[] => {
-    let flatTree: IModule[] = [];
-    moduleTree.forEach((mod) => {
-      flatTree.push({ ...mod, parentId });
+  // Handle search and filter
+  const filteredWarehouses = warehouses?.data?.filter((warehouse) => {
+    const matchesSearch =
+      warehouse.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      warehouse.alias.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      warehouse.color.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      warehouse.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      if (openModules[mod.moduleId] && mod.childModules && mod.childModules.length > 0) {
-        flatTree = [...flatTree, ...flattenTree(mod.childModules, mod.moduleId)];
-      }
-    });
-    return flatTree;
-  };
+    const matchesStatus =
+      filterStatus === 'All' ||
+      (filterStatus === 'Active' && !warehouse.deletedAt) ||
+      (filterStatus === 'Non Active' && warehouse.deletedAt);
 
-  // Toggle open/close state for a module
-  const toggleOpenModule = (moduleId: string) => {
-    setOpenModules((prev) => ({
-      ...prev,
-      [moduleId]: !prev[moduleId],
-    }));
-  };
-
-  // Build rows from flattened tree structure
-  const rows = flattenTree(modulesTree);
+    return matchesSearch && matchesStatus;
+  });
 
   // Handle double click to open modal
   const handleRowDoubleClick = (params: GridRowParams) => {
-    setCurrentModule(params.row);
+    setCurrentWarehouse(params.row);
     openModal('detail');
   };
 
   // Handle row selection
   const handleRowSelectionModelChange = (rowSelectionModel: GridRowSelectionModel) => {
     const selectedIds = Array.from(rowSelectionModel) as string[];
-    setSelectedModuleIds(selectedIds);
+    setSelectedWarehouseIds(selectedIds);
 
-    const selectedRows = modules?.data?.filter((module) => selectedIds.includes(module.moduleId)) || [];
+    const selectedRows = filteredWarehouses?.filter((warehouse) => selectedIds.includes(warehouse.warehouseId)) || [];
 
     const deletedAtValues = selectedRows
-      .filter((module) => module.deletedAt)
-      .map((module) => module.deletedAt as string);
+      .filter((warehouse) => warehouse.deletedAt)
+      .map((warehouse) => warehouse.deletedAt as string);
 
-    setSelectedModuleDeletedAt(deletedAtValues);
+    setSelectedWarehouseDeletedAt(deletedAtValues);
   };
 
   // Handle right-click context menu
@@ -207,20 +173,20 @@ const Modules = () => {
       return;
     }
 
-    const record = modules?.data?.find((row) => Number(row.moduleId) === Number(rowId));
+    const record = filteredWarehouses?.find((row) => row.warehouseId === rowId);
 
     if (!record) {
       return;
     }
 
     setContextMenu({ mouseX: event.clientX, mouseY: event.clientY });
-    setCurrentModule(record);
+    setCurrentWarehouse(record);
   };
 
-  const handleModuleAction = async (action: 'softDelete' | 'forceDelete' | 'restore', ids: string[]) => {
+  const handleWarehouseAction = async (action: 'softDelete' | 'forceDelete' | 'restore', ids: string[]) => {
     try {
       if (ids.length === 0) {
-        throw new Error('No modules selected');
+        throw new Error('No warehouses selected');
       }
 
       let response;
@@ -230,20 +196,20 @@ const Modules = () => {
       switch (action) {
         case 'softDelete':
           response = await softDeletes({ ids }).unwrap();
-          successMessage = response.message || 'Modules soft deleted successfully';
-          failureMessage = response.message || 'Failed to soft delete modules';
+          successMessage = response.message || 'Warehouses soft deleted successfully';
+          failureMessage = response.message || 'Failed to soft delete warehouses';
           break;
 
         case 'forceDelete':
           response = await forceDeletes({ ids }).unwrap();
-          successMessage = response.message || 'Modules force deleted successfully';
-          failureMessage = response.message || 'Failed to force delete modules';
+          successMessage = response.message || 'Warehouses force deleted successfully';
+          failureMessage = response.message || 'Failed to force delete warehouses';
           break;
 
         case 'restore':
-          response = await restoreModules({ ids }).unwrap();
-          successMessage = response.message || 'Modules restored successfully';
-          failureMessage = response.message || 'Failed to restore modules';
+          response = await restoreWarehouses({ ids }).unwrap();
+          successMessage = response.message || 'Warehouses restored successfully';
+          failureMessage = response.message || 'Failed to restore warehouses';
           break;
 
         default:
@@ -252,7 +218,7 @@ const Modules = () => {
 
       if (response.success) {
         toast.success(successMessage);
-        setCurrentModule(null);
+        setCurrentWarehouse(null);
         closeModal(action);
       } else {
         throw new Error(failureMessage);
@@ -301,40 +267,11 @@ const Modules = () => {
     };
   }, [contextMenu, openMenuActionTable]);
 
-  // Load modules and construct the tree structure
-  useEffect(() => {
-    const loadModules = async () => {
-      if (!isLoading && modules?.data) {
-        const allQueryModules = modules.data || [];
-
-        // Apply filters based on search query and filter status
-        const filteredModules = allQueryModules.filter((role) => {
-          const matchesSearch =
-            role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            role.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-          const matchesStatus =
-            filterStatus === 'All' ||
-            (filterStatus === 'Active' && !role.deletedAt) ||
-            (filterStatus === 'Non Active' && role.deletedAt);
-
-          return matchesSearch && matchesStatus;
-        });
-
-        // Build the tree with the filtered modules
-        const tree = buildModuleTree(filteredModules);
-        setModulesTree(tree);
-      }
-    };
-
-    loadModules();
-  }, [modules, isLoading, searchQuery, filterStatus]);
-
   if (isLoading) {
     return <div className='py-4'>Loading...</div>;
   }
 
-  if (isError || !modules) {
+  if (isError || !warehouses) {
     return <div className='text-center text-red-500 py-4'>Failed to fetch data</div>;
   }
 
@@ -342,7 +279,7 @@ const Modules = () => {
     <div className='flex flex-col gap-2'>
       {/* HEADER BAR */}
       <HeaderWithFilterMenu
-        title='Modules'
+        title='Warehouses'
         typeTagHtml='modal'
         setSearchQuery={handleSearchQuery}
         dropdownRef={menuActionButtonRef}
@@ -351,8 +288,8 @@ const Modules = () => {
         isDropdownOpen={isMenuActionButton}
         setIsDropdownOpen={setIsMenuActionButton}
         handleFilterStatus={handleFilterStatus}
-        selectedModels={selectedModuleIds}
-        selectedModelsDeletedAt={selectedModuleDeletedAt}
+        selectedModels={selectedWarehouseIds}
+        selectedModelsDeletedAt={selectedWarehouseDeletedAt}
         isFilterOpen={isFilterOpen}
         setIsFilterOpen={setIsFilterOpen}
         openModal={openModal}
@@ -366,15 +303,15 @@ const Modules = () => {
             xs: 'calc(100vh - 295px)',
             sm: 'calc(100vh - 175px)',
           },
-          gap: '20px',
           marginTop: '20px',
         }}
       >
         <DataGrid
-          rows={rows}
+          rows={filteredWarehouses || []}
           columns={columns}
-          getRowId={(row) => row.moduleId}
+          getRowId={(row) => row.warehouseId}
           getRowClassName={(params) => getRowClassName(params, filterStatus)}
+          checkboxSelection
           onRowSelectionModelChange={handleRowSelectionModelChange}
           slotProps={{
             row: {
@@ -384,17 +321,17 @@ const Modules = () => {
           }}
           onRowDoubleClick={handleRowDoubleClick}
           className='bg-white shadow rounded-lg border border-gray-200 !text-gray-700 !w-full !h-full overflow-auto'
-          hideFooter
+          pageSizeOptions={[5, 10, 20, 50, 100]}
         />
 
         {/* Action Data Table */}
         {anchorPosition && (
           <MenuAction
-            type='modules'
+            type='warehouses'
             typeTagHtml='modal'
             dropdownActionTableRef={menuActionTableRef}
             anchorPosition={anchorPosition}
-            currentItem={currentModule as IModule}
+            currentItem={currentWarehouse as IWarehouse}
             filterStatus={filterStatus}
             openModal={openModal}
             handleCloseActionTable={handleCloseActionTable}
@@ -405,13 +342,16 @@ const Modules = () => {
         {/* Modal for soft/force delete & restore */}
         {isModalOpen.softDelete && (
           <Confirmation
-            title='Soft Delete Module'
-            description='Are you sure you want to soft delete this module?'
+            title='Soft Delete Warehouse'
+            description='Are you sure you want to soft delete this warehouse?'
             isVisible={isAnimationModalOpen.softDelete}
             isLoading={isSoftDeleting}
             closeModal={() => closeModal('softDelete')}
             handleDeactivate={() =>
-              handleModuleAction('softDelete', getModelIdsToHandle(selectedModuleIds, currentModule as IModule))
+              handleWarehouseAction(
+                'softDelete',
+                getModelIdsToHandle(selectedWarehouseIds, currentWarehouse as IWarehouse)
+              )
             }
             handleModalClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
           />
@@ -419,13 +359,16 @@ const Modules = () => {
 
         {isModalOpen.forceDelete && (
           <Confirmation
-            title='Force Delete Module'
-            description='Are you sure you want to force delete this module?'
+            title='Force Delete Warehouse'
+            description='Are you sure you want to force delete this warehouse?'
             isVisible={isAnimationModalOpen.forceDelete}
             isLoading={isForceDeleting}
             closeModal={() => closeModal('forceDelete')}
             handleDeactivate={() =>
-              handleModuleAction('forceDelete', getModelIdsToHandle(selectedModuleIds, currentModule as IModule))
+              handleWarehouseAction(
+                'forceDelete',
+                getModelIdsToHandle(selectedWarehouseIds, currentWarehouse as IWarehouse)
+              )
             }
             handleModalClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
           />
@@ -433,25 +376,28 @@ const Modules = () => {
 
         {isModalOpen.restore && (
           <Confirmation
-            title='Restore Module'
-            description='Are you sure you want to restore this module?'
+            title='Restore Warehouse'
+            description='Are you sure you want to restore this warehouse?'
             isVisible={isAnimationModalOpen.restore}
             isLoading={isRestoring}
             closeModal={() => closeModal('restore')}
             handleDeactivate={() =>
-              handleModuleAction('restore', getModelIdsToHandle(selectedModuleIds, currentModule as IModule))
+              handleWarehouseAction(
+                'restore',
+                getModelIdsToHandle(selectedWarehouseIds, currentWarehouse as IWarehouse)
+              )
             }
             handleModalClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
           />
         )}
 
         {/* Context Menu */}
-        {contextMenu && currentModule && (
+        {contextMenu && currentWarehouse && (
           <MenuContext
-            type='modules'
+            type='warehouses'
             typeTagHtml='modal'
             contextMenu={contextMenu}
-            currentItem={currentModule}
+            currentItem={currentWarehouse}
             openModal={openModal}
             divContextMenuRef={divContextMenuRef}
             filterStatus={filterStatus}
@@ -462,7 +408,7 @@ const Modules = () => {
 
       {/* Modal create */}
       {isModalOpen.create && (
-        <ModuleForm
+        <WarehouseForm
           type='create'
           closeModal={() => closeModal('create')}
           isAnimationModalOpen={isAnimationModalOpen.create}
@@ -470,15 +416,16 @@ const Modules = () => {
       )}
 
       {isModalOpen.update && (
-        <ModuleForm
+        <WarehouseForm
           type='update'
           closeModal={() => closeModal('update')}
           isAnimationModalOpen={isAnimationModalOpen.update}
-          moduleId={currentModule?.moduleId || selectedModuleIds[0]}
+          warehouses={filteredWarehouses}
+          warehouseId={currentWarehouse?.warehouseId || selectedWarehouseIds[0]}
         />
       )}
     </div>
   );
 };
 
-export default Modules;
+export default Warehouses;

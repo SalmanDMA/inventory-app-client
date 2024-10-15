@@ -30,14 +30,16 @@ const Page = () => {
   const { data: userData, isLoading: isUserLoading } = useGetUserQuery({ userId: id as string });
   const { data: rolesData } = useGetRolesQuery();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
-  const [createUpload, { isLoading: isCreateUpload }] = useCreateUploadMutation();
-  const [deleteUpload, { isLoading: isDeleteUpload }] = useForceDeleteUploadsMutation();
+  const [createUpload] = useCreateUploadMutation();
+  const [deleteUpload] = useForceDeleteUploadsMutation();
+
   const token = useAppSelector((state) => state.global.token);
   const router = useRouter();
   const { fileUrl } = useFetchFile(
     userData?.data.avatarId ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${userData?.data.avatarId}` : null,
     token as string
   );
+  const [loadingUpload, setLoadingUpload] = useState<boolean>(false);
 
   // Initial values
   const initialValues: CreateOrUpdateUserFormValues = {
@@ -70,6 +72,8 @@ const Page = () => {
 
   const handleFileUpload = async (file: File, base64Image: string) => {
     try {
+      setLoadingUpload(true);
+
       const optimizedBase64Image = await optimizeBase64(base64Image);
       const payload = { file, image: optimizedBase64Image, folder: 'users', prefix: 'users' };
 
@@ -89,8 +93,8 @@ const Page = () => {
           type: 'image',
         }).unwrap();
 
-        if (responseUpload.success)
-          return { uploadId: responseUpload.data.uploadId, publicId: response.data.data.public_id };
+        if (responseUpload.success) setLoadingUpload(false);
+        return { uploadId: responseUpload.data.uploadId, publicId: response.data.data.public_id };
       } else {
         throw new Error(response.data.message);
       }
@@ -100,6 +104,7 @@ const Page = () => {
         err.data?.message || (error as Error).message?.replace(/^Error:\s*/, '') || 'Something went wrong';
 
       toast.error('Action failed: ' + errorMessage);
+      setLoadingUpload(false);
       return null;
     }
   };
@@ -396,7 +401,7 @@ const Page = () => {
                   <label
                     htmlFor='file-upload'
                     className={`relative cursor-pointer bg-blue-500 rounded-md font-medium text-white p-1 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500
-    ${isCreateUpload || isUpdating || isDeleteUpload ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+    ${loadingUpload || isUpdating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
                   >
                     <span>{avatarPreview ? 'Change' : 'Upload'} a file</span>
                     <input
@@ -406,7 +411,7 @@ const Page = () => {
                       className='sr-only'
                       accept='image/jpeg, image/png, image/jpg'
                       onChange={(e) => handleFileChange(e.target.files?.[0] as File)}
-                      disabled={isCreateUpload || isUpdating || isDeleteUpload}
+                      disabled={loadingUpload || isUpdating}
                     />
                   </label>
                   <p className='pl-1 text-gray-500'>or drag and drop</p>
@@ -420,7 +425,7 @@ const Page = () => {
         <div className='mt-6 flex justify-end'>
           <button
             type='submit'
-            disabled={isUpdating || formik.isSubmitting || isCreateUpload || isDeleteUpload}
+            disabled={isUpdating || loadingUpload || formik.isSubmitting}
             className='bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 disabled:opacity-50'
           >
             {isUpdating ? 'Saving...' : 'Save Changes'}

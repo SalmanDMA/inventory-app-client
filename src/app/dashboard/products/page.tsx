@@ -1,30 +1,305 @@
 'use client';
 
-import { useCreateProductMutation, useGetProductsQuery } from '@/state/api';
-import { PlusCircleIcon, SearchIcon } from 'lucide-react';
-import { useState } from 'react';
-import Header from '@/app/(components)/Header';
-import Rating from '@/app/(components)/Rating';
-import CreateProductModal from './CreateProductModal';
+import { useState, MouseEvent, useEffect } from 'react';
+import {
+  useForceDeleteUploadsMutation,
+  useForceDeleteProductsMutation,
+  useGetProductsQuery,
+  useRestoreUploadsMutation,
+  useRestoreProductsMutation,
+  useSoftDeleteUploadsMutation,
+  useSoftDeleteProductsMutation,
+} from '@/state/api';
+import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from '@mui/x-data-grid';
+import { MoreVerticalIcon } from 'lucide-react';
+import { IProduct } from '@/types/model';
+import { Box } from '@mui/material';
 import Image from 'next/image';
-
-type ProductFormData = {
-  name: string;
-  price: number;
-  stockQuantity: number;
-  rating: number;
-};
+import { toast } from 'react-toastify';
+import { ResponseError } from '@/types/response';
+import Confirmation from '@/app/(components)/Modal/Confirmation';
+import { useAppSelector } from '@/app/redux';
+import { deleteAvatarFromCloudinary, fetchProductById } from '@/utils/httpClient';
+import HeaderWithFilterMenu from '@/app/(components)/Header/WithFilterMenu';
+import MenuContext from '@/app/(components)/Menu/Context';
+import MenuAction from '@/app/(components)/Menu/Action';
+import useModal from '@/app/hooks/useModal';
+import { useMenu } from '@/app/hooks/useMenu';
+import { useSearchQuery } from '@/app/hooks/useSearchQuery';
+import { useFilterStatusData } from '@/app/hooks/useFilterStatusData';
+import { getModelIdsToHandle, getRowClassName } from '@/utils/common';
+import { useFetchFile } from '@/app/hooks/useFetchFile';
 
 const Products = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data: products, isError, isLoading } = useGetProductsQuery();
+  const [softDeletes, { isLoading: isSoftDeleting }] = useSoftDeleteProductsMutation();
+  const [forceDeletes, { isLoading: isForceDeleting }] = useForceDeleteProductsMutation();
+  const [restoreProducts, { isLoading: isRestoring }] = useRestoreProductsMutation();
+  const [deleteUpload, { isLoading: isLoadingDeleteUpload }] = useForceDeleteUploadsMutation();
+  const [softDeleteUpload, { isLoading: isSoftDeletingUpload }] = useSoftDeleteUploadsMutation();
+  const [restoreUpload, { isLoading: isRestoringUpload }] = useRestoreUploadsMutation();
 
-  const { data: products, isLoading, isError } = useGetProductsQuery(searchTerm);
+  const token = useAppSelector((state) => state.global.token);
 
-  const [createProduct] = useCreateProductMutation();
-  const handleCreateProduct = async (productData: ProductFormData) => {
-    await createProduct(productData);
+  const { isModalOpen, isAnimationModalOpen, openModal, closeModal } = useModal();
+  const {
+    anchorPosition,
+    contextMenu,
+    divContextMenuRef,
+    handleActionTableClick,
+    handleCloseActionTable,
+    isMenuActionButton,
+    menuActionButtonRef,
+    menuActionTableRef,
+    openMenuActionTable,
+    setContextMenu,
+    setIsMenuActionButton,
+  } = useMenu();
+  const { searchQuery, handleSearchQuery } = useSearchQuery();
+  const { filterStatus, isFilterOpen, filterRef, handleFilterStatus, setIsFilterOpen } = useFilterStatusData();
+
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [selectedProductDeletedAt, setSelectedProductDeletedAt] = useState<string[]>([]);
+  const [currentProduct, setCurrentProduct] = useState<IProduct | null>(null);
+
+  const { fileUrl } = useFetchFile(
+    currentProduct?.imageId ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${currentProduct?.imageId}` : null,
+    token as string
+  );
+
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Product Name', width: 200, flex: 1 },
+    { field: 'sku', headerName: 'SKU', width: 150, flex: 1 },
+    {
+      field: 'price',
+      headerName: 'Price',
+      width: 120,
+      flex: 1,
+      renderCell: (params) => <span title={`$${params.row.price.toFixed(2)}`}>${params.row.price.toFixed(2)}</span>,
+      valueGetter: (params) => {
+        return params;
+      },
+    },
+    {
+      field: 'stock',
+      headerName: 'Stock',
+      width: 100,
+      flex: 1,
+      renderCell: (params) => (
+        <span
+          className={`inline-flex justify-center items-center px-2 py-1 rounded-md text-white max-w-max h-max max-h-[20px] ${
+            params.row.stock > params.row.reorderLevel ? 'bg-green-500' : 'bg-red-500'
+          }`}
+          title={params.row.stock > params.row.reorderLevel ? 'In Stock' : 'Out of Stock'}
+        >
+          {params.row.stock}
+        </span>
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 100,
+      resizable: false,
+      filterable: false,
+      sortable: false,
+      renderCell: (params) => {
+        return (
+          <div
+            className='relative w-full h-full flex justify-center items-center'
+            style={{ cursor: 'pointer' }}
+            onClick={(event) => {
+              handleCloseActionTable();
+              handleActionTableClick(event, params.id.toString());
+              setCurrentProduct(params.row);
+            }}
+          >
+            <MoreVerticalIcon />
+          </div>
+        );
+      },
+    },
+  ];
+
+  // Handle search and filter
+  const filteredProducts = products?.data?.filter((product) => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.costPrice.toString().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.discount && product.discount.toString().includes(searchQuery.toLowerCase())) ||
+      (product.height && product.height.toString().includes(searchQuery.toLowerCase())) ||
+      (product.weight && product.weight.toString().includes(searchQuery.toLowerCase())) ||
+      (product.width && product.width.toString().includes(searchQuery.toLowerCase())) ||
+      (product.rating && product.rating.toString().includes(searchQuery.toLowerCase())) ||
+      product.reorderLevel.toString().includes(searchQuery.toLowerCase()) ||
+      product.sku.toString().includes(searchQuery.toLowerCase()) ||
+      product.stock.toString().includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      filterStatus === 'All' ||
+      (filterStatus === 'Active' && !product.deletedAt) ||
+      (filterStatus === 'Non Active' && product.deletedAt);
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Handle double click to open modal
+  const handleRowDoubleClick = (params: GridRowParams) => {
+    setCurrentProduct(params.row);
+    openModal('detail');
   };
+
+  // Handle row selection
+  const handleRowSelectionModelChange = (rowSelectionModel: GridRowSelectionModel) => {
+    const selectedIds = Array.from(rowSelectionModel) as string[];
+    setSelectedProductIds(selectedIds);
+
+    const selectedRows = filteredProducts?.filter((product) => selectedIds.includes(product.productId)) || [];
+
+    const deletedAtValues = selectedRows
+      .filter((product) => product.deletedAt)
+      .map((product) => product.deletedAt as string);
+
+    setSelectedProductDeletedAt(deletedAtValues);
+  };
+
+  // Handle right-click context menu
+  const handleRowContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    if (!event.currentTarget) {
+      return;
+    }
+
+    const rowId = (event.currentTarget as HTMLDivElement).getAttribute('data-id');
+
+    if (!rowId) {
+      return;
+    }
+
+    const record = filteredProducts?.find((row) => row.productId === rowId);
+
+    if (!record) {
+      return;
+    }
+
+    setContextMenu({ mouseX: event.clientX, mouseY: event.clientY });
+    setCurrentProduct(record);
+  };
+
+  const handleProductAction = async (action: 'softDelete' | 'forceDelete' | 'restore', ids: string[]) => {
+    try {
+      if (ids.length === 0) {
+        throw new Error('No products selected');
+      }
+
+      const productDataArray = await Promise.all(ids.map(async (id) => fetchProductById(id, token as string)));
+
+      const imageIds = productDataArray
+        .map((productData) => {
+          return productData?.data.imageId;
+        })
+        .filter((imageId): imageId is string => !!imageId) as string[];
+
+      let response;
+      let successMessage = '';
+      let failureMessage = '';
+
+      if (action === 'forceDelete') {
+        await Promise.all(
+          productDataArray.map(async (productData) => {
+            if (productData?.data.image?.path) {
+              await deleteAvatarFromCloudinary(productData.data.image.path, token as string);
+            }
+          })
+        );
+        if (imageIds.length > 0) {
+          await deleteUpload({
+            ids: imageIds,
+          }).unwrap();
+        }
+      }
+
+      switch (action) {
+        case 'softDelete':
+          response = await softDeletes({ ids }).unwrap();
+          if (imageIds.length > 0) {
+            await softDeleteUpload({ ids: imageIds }).unwrap();
+          }
+          successMessage = response.message || 'Products soft deleted successfully';
+          failureMessage = response.message || 'Failed to soft delete products';
+          break;
+
+        case 'forceDelete':
+          response = await forceDeletes({ ids }).unwrap();
+          successMessage = response.message || 'Products force deleted successfully';
+          failureMessage = response.message || 'Failed to force delete products';
+          break;
+
+        case 'restore':
+          response = await restoreProducts({ ids }).unwrap();
+          if (imageIds.length > 0) {
+            await restoreUpload({ ids: imageIds }).unwrap();
+          }
+          successMessage = response.message || 'Products restored successfully';
+          failureMessage = response.message || 'Failed to restore products';
+          break;
+
+        default:
+          throw new Error('Invalid action');
+      }
+
+      if (response.success) {
+        toast.success(successMessage);
+        setCurrentProduct(null);
+        closeModal(action);
+      } else {
+        throw new Error(failureMessage);
+      }
+    } catch (error) {
+      const err = error as ResponseError;
+      const errorMessage =
+        err.data?.message || (error as Error).message?.replace(/^Error:\s*/, '') || 'Something went wrong';
+
+      toast.error('Action failed: ' + errorMessage);
+    }
+  };
+
+  // Handle click outside context menu to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (menuActionButtonRef.current && !menuActionButtonRef.current.contains(event.target as Node)) {
+        setIsMenuActionButton(false);
+      }
+
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+
+      if (
+        contextMenu !== null &&
+        divContextMenuRef.current &&
+        !divContextMenuRef.current.contains(event.target as Node)
+      ) {
+        setContextMenu(null);
+      }
+
+      if (
+        openMenuActionTable &&
+        menuActionTableRef.current &&
+        !menuActionTableRef.current.contains(event.target as Node)
+      ) {
+        handleCloseActionTable();
+      }
+    };
+
+    window.addEventListener('click', handleClickOutside as unknown as EventListener);
+
+    return () => {
+      window.removeEventListener('click', handleClickOutside as unknown as EventListener);
+    };
+  }, [contextMenu, openMenuActionTable]);
 
   if (isLoading) {
     return <div className='py-4'>Loading...</div>;
@@ -35,65 +310,247 @@ const Products = () => {
   }
 
   return (
-    <div className='mx-auto pb-5 w-full'>
-      {/* SEARCH BAR */}
-      <div className='mb-6'>
-        <div className='flex items-center border-2 border-gray-200 rounded'>
-          <SearchIcon className='w-5 h-5 text-gray-500 m-2' />
-          <input
-            className='w-full py-2 px-4 rounded bg-white'
-            placeholder='Search products...'
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
+    <div className='flex flex-col gap-2'>
       {/* HEADER BAR */}
-      <div className='flex justify-between items-center mb-6'>
-        <Header name='Products' />
-        <button
-          className='flex items-center bg-blue-500 hover:bg-blue-700 text-gray-200 font-bold py-2 px-4 rounded'
-          onClick={() => setIsModalOpen(true)}
-        >
-          <PlusCircleIcon className='w-5 h-5 mr-2 !text-gray-200' /> Create Product
-        </button>
-      </div>
+      <HeaderWithFilterMenu
+        title='Products'
+        type='products'
+        typeTagHtml='link'
+        setSearchQuery={handleSearchQuery}
+        dropdownRef={menuActionButtonRef}
+        filterRef={filterRef}
+        filterStatus={filterStatus}
+        isDropdownOpen={isMenuActionButton}
+        setIsDropdownOpen={setIsMenuActionButton}
+        handleFilterStatus={handleFilterStatus}
+        selectedModels={selectedProductIds}
+        selectedModelsDeletedAt={selectedProductDeletedAt}
+        isFilterOpen={isFilterOpen}
+        setIsFilterOpen={setIsFilterOpen}
+        openModal={openModal}
+        isModalOpen={isModalOpen}
+      />
 
-      {/* BODY PRODUCTS LIST */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg-grid-cols-3 gap-10 justify-between'>
-        {isLoading ? (
-          <div>Loading...</div>
-        ) : (
-          products?.map((product) => (
-            <div key={product.productId} className='border shadow rounded-md p-4 max-w-full w-full mx-auto'>
-              <div className='flex flex-col items-center'>
-                {/* <Image
-                  src={`https://s3-inventorymanagement.s3.us-east-2.amazonaws.com/product${
-                    Math.floor(Math.random() * 3) + 1
-                  }.png`}
-                  alt={product.name}
-                  width={150}
-                  height={150}
-                  className='mb-3 rounded-2xl w-36 h-36'
-                /> */}
-                img
-                <h3 className='text-lg text-gray-900 font-semibold'>{product.name}</h3>
-                <p className='text-gray-800'>${product.price.toFixed(2)}</p>
-                <div className='text-sm text-gray-600 mt-1'>Stock: {product.stockQuantity}</div>
-                {product.rating && (
-                  <div className='flex items-center mt-2'>
-                    <Rating rating={product.rating} />
-                  </div>
-                )}
+      {/* TABLE */}
+      <Box
+        sx={{
+          width: '100%',
+          height: {
+            xs: 'calc(100vh - 295px)',
+            sm: 'calc(100vh - 175px)',
+          },
+          marginTop: '20px',
+        }}
+      >
+        <DataGrid
+          rows={filteredProducts || []}
+          columns={columns}
+          getRowId={(row) => row.productId}
+          getRowClassName={(params) => getRowClassName(params, filterStatus)}
+          checkboxSelection
+          onRowSelectionModelChange={handleRowSelectionModelChange}
+          slotProps={{
+            row: {
+              onContextMenu: (e) => handleRowContextMenu(e),
+              style: { cursor: 'context-menu' },
+            },
+          }}
+          onRowDoubleClick={handleRowDoubleClick}
+          className='bg-white shadow rounded-lg border border-gray-200 !text-gray-700 !w-full !h-full overflow-auto'
+          pageSizeOptions={[5, 10, 20, 50, 100]}
+        />
+      </Box>
+
+      {/* Action Data Table */}
+      {anchorPosition && (
+        <MenuAction
+          type='products'
+          typeTagHtml='link'
+          dropdownActionTableRef={menuActionTableRef}
+          anchorPosition={anchorPosition}
+          currentItem={currentProduct as IProduct}
+          filterStatus={filterStatus}
+          openModal={openModal}
+          handleCloseActionTable={handleCloseActionTable}
+          openDropdownActionTable={openMenuActionTable}
+        />
+      )}
+
+      {/* Modal for soft/force delete & restore */}
+      {isModalOpen.softDelete && (
+        <Confirmation
+          title='Soft Delete Product'
+          description='Are you sure you want to soft delete this product?'
+          isVisible={isAnimationModalOpen.softDelete}
+          isLoading={isSoftDeleting || isSoftDeletingUpload}
+          closeModal={() => closeModal('softDelete')}
+          handleDeactivate={() =>
+            handleProductAction('softDelete', getModelIdsToHandle(selectedProductIds, currentProduct as IProduct))
+          }
+          handleModalClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+        />
+      )}
+
+      {isModalOpen.forceDelete && (
+        <Confirmation
+          title='Force Delete Product'
+          description='Are you sure you want to force delete this product?'
+          isVisible={isAnimationModalOpen.forceDelete}
+          isLoading={isForceDeleting || isLoadingDeleteUpload}
+          closeModal={() => closeModal('forceDelete')}
+          handleDeactivate={() =>
+            handleProductAction('forceDelete', getModelIdsToHandle(selectedProductIds, currentProduct as IProduct))
+          }
+          handleModalClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+        />
+      )}
+
+      {isModalOpen.restore && (
+        <Confirmation
+          title='Restore Product'
+          description='Are you sure you want to restore this product?'
+          isVisible={isAnimationModalOpen.restore}
+          isLoading={isRestoring || isRestoringUpload}
+          closeModal={() => closeModal('restore')}
+          handleDeactivate={() =>
+            handleProductAction('restore', getModelIdsToHandle(selectedProductIds, currentProduct as IProduct))
+          }
+          handleModalClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+        />
+      )}
+
+      {/* Modal for showing product details */}
+      {isModalOpen.detail && currentProduct && (
+        <div
+          className={`fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 ${
+            isAnimationModalOpen.detail ? 'opacity-100' : 'opacity-0'
+          } transition-opacity duration-300`}
+          onClick={() => closeModal('detail')}
+        >
+          <div
+            className={`bg-white p-6 rounded-lg shadow-lg max-w-lg w-full transform transition-all duration-300 ${
+              isAnimationModalOpen.detail ? 'scale-100' : 'scale-95'
+            }`}
+            onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+          >
+            {/* Header with Image */}
+            <div className='flex items-center mb-6'>
+              <Image
+                src={fileUrl as string}
+                alt={`${currentProduct.name}'s image`}
+                width={100}
+                height={100}
+                className='w-20 h-20 rounded-full mr-4 border border-gray-300 object-cover'
+              />
+              <div>
+                <h2 className='text-2xl font-bold text-gray-800'>{currentProduct.name}</h2>
+                <p className='text-sm text-gray-500'>{currentProduct.sku}</p>
               </div>
             </div>
-          ))
-        )}
-      </div>
 
-      {/* MODAL */}
-      <CreateProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreate={handleCreateProduct} />
+            {/* Divider */}
+            <hr className='my-4 border-t-2 border-gray-200' />
+
+            {/* Product Information */}
+            <div className='space-y-4'>
+              <div className='flex justify-between'>
+                <div>
+                  <strong className='block text-gray-600'>Added Date:</strong>
+                  <p className='text-gray-800'>{new Date(currentProduct.createdAt as string).toLocaleDateString()}</p>
+                </div>
+                <div className='text-end'>
+                  <strong className='block text-gray-600'>Price:</strong>
+                  <p className='text-gray-800'>${currentProduct.price.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div className='flex justify-between'>
+                <div>
+                  <strong className='block text-gray-600'>Stock:</strong>
+                  <p className='text-gray-800'>{currentProduct.stock} units</p>
+                </div>
+                <div className='text-end'>
+                  <strong className='block text-gray-600'>Reorder Level:</strong>
+                  <p className='text-gray-800'>{currentProduct.reorderLevel} units</p>
+                </div>
+              </div>
+
+              <div className='flex justify-between'>
+                <div>
+                  <strong className='block text-gray-600'>Category:</strong>
+                  <p className='text-gray-800'>{currentProduct.category?.name || 'N/A'}</p>
+                </div>
+                <div className='text-end'>
+                  <strong className='block text-gray-600'>Brand:</strong>
+                  <p className='text-gray-800'>{currentProduct.brand?.name || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className='flex justify-between'>
+                <div>
+                  <strong className='block text-gray-600'>Supplier:</strong>
+                  <p className='text-gray-800'>{currentProduct.supplier?.name || 'N/A'}</p>
+                </div>
+
+                <div className='text-end'>
+                  <strong className='block text-gray-600'>Weight:</strong>
+                  <p className='text-gray-800'>{currentProduct.weight ? `${currentProduct.weight} kg` : 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className='flex justify-between'>
+                <div className='text-start'>
+                  <strong className='block text-gray-600'>Height:</strong>
+                  <p className='text-gray-800'>{currentProduct.height ? `${currentProduct.height} cm` : 'N/A'}</p>
+                </div>
+                <div className='text-end'>
+                  <strong className='block text-gray-600'>Width:</strong>
+                  <p className='text-gray-800'>{currentProduct.width ? `${currentProduct.width} cm` : 'N/A'}</p>
+                </div>
+              </div>
+
+              <div>
+                <strong className='block text-gray-600'>Description:</strong>
+                <p className='text-gray-800'>{currentProduct.description}</p>
+              </div>
+
+              {currentProduct.discount && (
+                <div className='flex items-center'>
+                  <strong className='block text-gray-600'>Discount:</strong>
+                  <p className='text-green-500 ml-2'>{currentProduct.discount}% OFF</p>
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <hr className='my-4 border-t-2 border-gray-200' />
+
+            {/* Action Buttons */}
+            <div className='flex justify-end'>
+              <button
+                onClick={() => closeModal('detail')}
+                className='bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md'
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && currentProduct && (
+        <MenuContext
+          type='products'
+          typeTagHtml='link'
+          contextMenu={contextMenu}
+          currentItem={currentProduct}
+          openModal={openModal}
+          divContextMenuRef={divContextMenuRef}
+          filterStatus={filterStatus}
+          setContextMenu={setContextMenu}
+        />
+      )}
     </div>
   );
 };

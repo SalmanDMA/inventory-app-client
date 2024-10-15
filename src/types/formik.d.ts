@@ -65,3 +65,108 @@ export interface CreateOrUpdateModuleTypeFormValues {
   icon?: string;
   description?: string;
 }
+
+export interface CreateOrUpdateWarehouseFormValues {
+  warehouseId?: string;
+  name: string;
+  location: string;
+  capacity: number | null;
+  description?: string;
+  picId: string;
+}
+
+export interface CreateOrUpdateSaleFormValues {
+  saleId?: string;
+  userId: string;
+  warehouseId: string;
+  total: number;
+  paymentStatus: 'PAID' | 'UNPAID' | 'CANCELLED' | 'OVERDUE';
+  paymentMethod: 'CASH' | 'CREDITCARD';
+}
+
+export interface CreateOrUpdatesSaleDetailFormValues {
+  saleDetailId?: string;
+  saleId: string;
+  productId: string;
+  quantity: number;
+  price: number;
+  discount?: number;
+  tax?: number;
+}
+
+export interface CreateOrUpdatesPurchaseFormValues {
+  purchaseId?: string;
+  supplierId: string;
+  warehouseId: string;
+  total: number;
+  paymentStatus: 'PAID' | 'UNPAID' | 'CANCELLED' | 'OVERDUE';
+  paymentMethod: 'CASH' | 'CREDITCARD';
+}
+
+export interface CreateOrUpdatesPurchaseDetailFormValues {
+  purchaseDetailId?: string;
+  purchaseId: string;
+  productId: string;
+  quantity: number;
+  price: number;
+  discount?: number;
+  tax?: number;
+}
+
+export interface CreateIStockMovementFormValues {
+  stockMovementId?: string;
+  warehouseId: string;
+  productId: string;
+  movementType: 'IN' | 'OUT';
+  movementReason?: string;
+  quantity: number;
+  transactionDate: string;
+}
+
+export interface CreateOrUpdateSupplierFormValues {
+  supplierId?: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  country?: string;
+}
+
+export interface CreateOrUpdateBrandFormValues {
+  brandId?: string;
+  name: string;
+  description?: string;
+  imageId?: string;
+  alias?: string;
+}
+
+export interface CreateOrUpdateCategoryFormValues {
+  categoryId?: string;
+  name: string;
+  parentId: string | null;
+  path?: string;
+  name: string;
+  alias?: string;
+  description?: string;
+}
+
+export interface CreateOrUpdateProductFormValues {
+  productId?: string;
+  sku?: string;
+  discount?: number | '';
+  costPrice: number | '';
+  name: string;
+  description: string;
+  price: number | '';
+  rating?: number | '';
+  stock: number | '';
+  reorderLevel: number | '';
+  categoryId: number | '';
+  brandId: string;
+  supplierId: string;
+  imageId: string;
+  height?: number | '';
+  width?: number | '';
+  weight?: number | '';
+  publicId?: string;
+}

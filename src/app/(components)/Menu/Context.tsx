@@ -1,12 +1,52 @@
-import { IModule, IRole, IUser } from '@/types/model';
+import {
+  IModule,
+  IProduct,
+  IRole,
+  IUser,
+  IWarehouse,
+  IBrand,
+  ICategory,
+  IPurchase,
+  IPurchaseDetail,
+  ISale,
+  ISaleDetail,
+  IStockMovement,
+  ISupplier,
+} from '@/types/model';
 import { ArchiveRestoreIcon, PencilIcon, PlusCircleIcon, Trash2Icon, TrashIcon } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
-type ModelWithId = IUser | IRole | IModule;
+type ModelWithId =
+  | IUser
+  | IRole
+  | IModule
+  | IWarehouse
+  | IProduct
+  | IBrand
+  | ICategory
+  | IPurchase
+  | IPurchaseDetail
+  | ISale
+  | ISaleDetail
+  | IStockMovement
+  | ISupplier;
 
 interface MenuContextProps<T extends ModelWithId> {
-  type: 'users' | 'roles' | 'modules';
+  type:
+    | 'users'
+    | 'roles'
+    | 'modules'
+    | 'warehouses'
+    | 'products'
+    | 'brands'
+    | 'categories'
+    | 'purchases'
+    | 'purchaseDetails'
+    | 'sales'
+    | 'saleDetails'
+    | 'stockMovements'
+    | 'suppliers';
   typeTagHtml: 'link' | 'modal';
   contextMenu: {
     mouseX: number;
@@ -25,6 +65,28 @@ const getModelId = (currentItem: ModelWithId) => {
       return (currentItem as IUser).userId;
     case 'roleId' in currentItem:
       return (currentItem as IRole).roleId;
+    case 'moduleId' in currentItem:
+      return (currentItem as IModule).moduleId;
+    case 'warehouseId' in currentItem:
+      return (currentItem as IWarehouse).warehouseId;
+    case 'productId' in currentItem:
+      return (currentItem as IProduct).productId;
+    case 'brandId' in currentItem:
+      return (currentItem as IBrand).brandId;
+    case 'categoryId' in currentItem:
+      return (currentItem as ICategory).categoryId;
+    case 'purchaseId' in currentItem:
+      return (currentItem as unknown as IPurchase).purchaseId;
+    case 'purchaseDetailId' in currentItem:
+      return (currentItem as unknown as IPurchaseDetail).purchaseDetailId;
+    case 'saleId' in currentItem:
+      return (currentItem as unknown as ISale).saleId;
+    case 'saleDetailId' in currentItem:
+      return (currentItem as unknown as ISaleDetail).saleDetailId;
+    case 'stockMovementId' in currentItem:
+      return (currentItem as unknown as IStockMovement).stockMovementId;
+    case 'supplierId' in currentItem:
+      return (currentItem as ISupplier).supplierId;
     default:
       return null;
   }
@@ -41,13 +103,6 @@ const MenuContext = <T extends ModelWithId>({
   setContextMenu,
 }: MenuContextProps<T>) => {
   const modelId = getModelId(currentItem);
-
-  console.log(modelId, 'modelId');
-  console.log(currentItem, 'currentItem');
-  console.log(filterStatus, 'filterStatus');
-  console.log(typeTagHtml, 'typeTagHtml');
-  console.log(contextMenu, 'contextMenu');
-  console.log(type, 'type');
 
   return (
     <div

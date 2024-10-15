@@ -19,6 +19,20 @@ import Link from 'next/link';
 
 interface HeaderWithFilterMenuProps {
   title: string;
+  type:
+    | 'users'
+    | 'roles'
+    | 'modules'
+    | 'warehouses'
+    | 'products'
+    | 'brands'
+    | 'categories'
+    | 'purchases'
+    | 'purchaseDetails'
+    | 'sales'
+    | 'saleDetails'
+    | 'stockMovements'
+    | 'suppliers';
   typeTagHtml: 'link' | 'modal';
   setSearchQuery: (query: string) => void;
   filterRef: React.RefObject<HTMLDivElement>;
@@ -42,6 +56,7 @@ interface HeaderWithFilterMenuProps {
 
 const HeaderWithFilterMenu: React.FC<HeaderWithFilterMenuProps> = ({
   title,
+  type,
   typeTagHtml,
   setSearchQuery,
   filterRef,
@@ -153,7 +168,7 @@ const HeaderWithFilterMenu: React.FC<HeaderWithFilterMenuProps> = ({
                 <>
                   <li className='hover:bg-gray-100 px-4 py-2 cursor-pointer flex items-center'>
                     {typeTagHtml === 'link' ? (
-                      <Link className='flex items-center w-full' href='/dashboard/users/create'>
+                      <Link className='flex items-center w-full' href={`/dashboard/${type}/create`}>
                         <PlusCircleIcon className='w-5 h-5 mr-2' /> Create
                       </Link>
                     ) : (

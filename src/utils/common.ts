@@ -1,7 +1,34 @@
-import { IModule, IRole, IUser } from '@/types/model';
+import {
+  IModule,
+  IProduct,
+  IRole,
+  IUser,
+  IWarehouse,
+  IBrand,
+  ICategory,
+  IPurchase,
+  IPurchaseDetail,
+  ISale,
+  ISaleDetail,
+  IStockMovement,
+  ISupplier,
+} from '@/types/model';
 import { GridRowParams } from '@mui/x-data-grid';
 
-type ModelTypes = IUser | IRole | IModule;
+type ModelTypes =
+  | IUser
+  | IRole
+  | IModule
+  | IWarehouse
+  | IProduct
+  | IBrand
+  | ICategory
+  | IPurchase
+  | IPurchaseDetail
+  | ISale
+  | ISaleDetail
+  | IStockMovement
+  | ISupplier;
 
 export const getRowClassName = (params: GridRowParams, filterStatus: string) => {
   if (filterStatus === 'All' && params.row.deletedAt) {
@@ -21,7 +48,27 @@ export const getModelIdsToHandle = <T extends ModelTypes>(modelIds: string[] | n
     case 'roleId' in currentModel:
       return [currentModel.roleId];
     case 'modelId' in currentModel:
-      return [currentModel.moduleId];
+      return [currentModel.modelId as string];
+    case 'warehouseId' in currentModel:
+      return [currentModel.warehouseId];
+    case 'productId' in currentModel:
+      return [currentModel.productId];
+    case 'brandId' in currentModel:
+      return [currentModel.brandId];
+    case 'categoryId' in currentModel:
+      return [currentModel.categoryId];
+    case 'purchaseId' in currentModel:
+      return [currentModel.purchaseId as string];
+    case 'purchaseDetailId' in currentModel:
+      return [currentModel.purchaseDetailId as string];
+    case 'saleId' in currentModel:
+      return [currentModel.saleId as string];
+    case 'saleDetailId' in currentModel:
+      return [currentModel.saleDetailId as string];
+    case 'stockMovementId' in currentModel:
+      return [currentModel.stockMovementId as string];
+    case 'supplierId' in currentModel:
+      return [currentModel.supplierId as string];
     default:
       return [];
   }

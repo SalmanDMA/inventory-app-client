@@ -33,6 +33,10 @@ export const fetchUserById = (id: string, token: string) => {
   return fetchData(`/users/${id}`, token);
 };
 
+export const fetchProductById = (id: string, token: string) => {
+  return fetchData(`/products/${id}`, token);
+};
+
 export const fetchRoleModuleByRoleId = (roleId: string, token: string) => {
   return fetchData(`/roles/${roleId}/modules`, token);
 };

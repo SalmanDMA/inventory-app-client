@@ -54,7 +54,7 @@ const ModuleForm = ({
     const moduleTypeId = e.target.value;
     const moduleTypeData = modulesTypes?.data?.find((moduleType) => moduleType.moduleTypeId === moduleTypeId);
     formik.setFieldValue('moduleTypeId', moduleTypeId);
-    if (moduleTypeData.name.toLocaleLowerCase() === 'menu directory') {
+    if (moduleTypeData && moduleTypeData.name.toLocaleLowerCase() === 'menu directory') {
       setSelectedModuleTypeMenuDirectory(moduleTypeId);
     } else {
       setSelectedModuleTypeMenuDirectory(null);

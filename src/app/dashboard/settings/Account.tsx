@@ -42,8 +42,6 @@ const Account = () => {
 
       const response = await deactiveAccount({ ids: [userId] }).unwrap();
 
-      console.log(response, 'ini response');
-
       if (response.success) {
         toast.success('Your account has been successfully deactivated.');
         cookie.remove('access_token');

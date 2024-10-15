@@ -209,7 +209,6 @@ const Users = () => {
 
       const avatarIds = userDataArray
         .map((userData) => {
-          console.log(userData, 'userData');
           return userData?.data.avatarId;
         })
         .filter((avatarId): avatarId is string => !!avatarId) as string[];
@@ -232,10 +231,6 @@ const Users = () => {
           }).unwrap();
         }
       }
-
-      console.log(userDataArray, 'userDataArray');
-      console.log(ids, 'ids');
-      console.log(avatarIds, 'avatarIds');
 
       switch (action) {
         case 'softDelete':
@@ -330,6 +325,7 @@ const Users = () => {
       {/* HEADER BAR */}
       <HeaderWithFilterMenu
         title='Users'
+        type='users'
         typeTagHtml='link'
         setSearchQuery={handleSearchQuery}
         dropdownRef={menuActionButtonRef}
