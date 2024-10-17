@@ -41,6 +41,18 @@ export const fetchRoleModuleByRoleId = (roleId: string, token: string) => {
   return fetchData(`/roles/${roleId}/modules`, token);
 };
 
+export const fetchBrandById = (id: string, token: string) => {
+  return fetchData(`/brands/${id}`, token);
+};
+
+export const fetchSupplierById = (id: string, token: string) => {
+  return fetchData(`/suppliers/${id}`, token);
+};
+
+export const fetchCustomerById = (id: string, token: string) => {
+  return fetchData(`/customers/${id}`, token);
+};
+
 // Cloudinari
 export const deleteAvatarFromCloudinary = async (avatarUrl: string, token: string) => {
   try {

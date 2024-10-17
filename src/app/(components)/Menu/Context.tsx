@@ -9,7 +9,7 @@ import {
   IPurchase,
   IPurchaseDetail,
   ISale,
-  ISaleDetail,
+  ISalesDetail,
   IStockMovement,
   ISupplier,
 } from '@/types/model';
@@ -28,7 +28,7 @@ type ModelWithId =
   | IPurchase
   | IPurchaseDetail
   | ISale
-  | ISaleDetail
+  | ISalesDetail
   | IStockMovement
   | ISupplier;
 
@@ -82,7 +82,7 @@ const getModelId = (currentItem: ModelWithId) => {
     case 'saleId' in currentItem:
       return (currentItem as unknown as ISale).saleId;
     case 'saleDetailId' in currentItem:
-      return (currentItem as unknown as ISaleDetail).saleDetailId;
+      return (currentItem as unknown as ISalesDetail).salesDetailId;
     case 'stockMovementId' in currentItem:
       return (currentItem as unknown as IStockMovement).stockMovementId;
     case 'supplierId' in currentItem:

@@ -32,12 +32,12 @@ import { useFetchFile } from '@/app/hooks/useFetchFile';
 
 const Products = () => {
   const { data: products, isError, isLoading } = useGetProductsQuery();
-  const [softDeletes, { isLoading: isSoftDeleting }] = useSoftDeleteProductsMutation();
-  const [forceDeletes, { isLoading: isForceDeleting }] = useForceDeleteProductsMutation();
-  const [restoreProducts, { isLoading: isRestoring }] = useRestoreProductsMutation();
-  const [deleteUpload, { isLoading: isLoadingDeleteUpload }] = useForceDeleteUploadsMutation();
-  const [softDeleteUpload, { isLoading: isSoftDeletingUpload }] = useSoftDeleteUploadsMutation();
-  const [restoreUpload, { isLoading: isRestoringUpload }] = useRestoreUploadsMutation();
+  const [softDeletes] = useSoftDeleteProductsMutation();
+  const [forceDeletes] = useForceDeleteProductsMutation();
+  const [restoreProducts] = useRestoreProductsMutation();
+  const [deleteUpload] = useForceDeleteUploadsMutation();
+  const [softDeleteUpload] = useSoftDeleteUploadsMutation();
+  const [restoreUpload] = useRestoreUploadsMutation();
 
   const token = useAppSelector((state) => state.global.token);
 
@@ -61,6 +61,7 @@ const Products = () => {
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [selectedProductDeletedAt, setSelectedProductDeletedAt] = useState<string[]>([]);
   const [currentProduct, setCurrentProduct] = useState<IProduct | null>(null);
+  const [loadingAction, setLoadingAction] = useState<boolean>(false);
 
   const { fileUrl } = useFetchFile(
     currentProduct?.imageId ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${currentProduct?.imageId}` : null,
@@ -126,7 +127,7 @@ const Products = () => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.costPrice.toString().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (product.discount && product.discount.toString().includes(searchQuery.toLowerCase())) ||
       (product.height && product.height.toString().includes(searchQuery.toLowerCase())) ||
       (product.weight && product.weight.toString().includes(searchQuery.toLowerCase())) ||
@@ -189,6 +190,7 @@ const Products = () => {
   };
 
   const handleProductAction = async (action: 'softDelete' | 'forceDelete' | 'restore', ids: string[]) => {
+    setLoadingAction(true);
     try {
       if (ids.length === 0) {
         throw new Error('No products selected');
@@ -206,21 +208,6 @@ const Products = () => {
       let successMessage = '';
       let failureMessage = '';
 
-      if (action === 'forceDelete') {
-        await Promise.all(
-          productDataArray.map(async (productData) => {
-            if (productData?.data.image?.path) {
-              await deleteAvatarFromCloudinary(productData.data.image.path, token as string);
-            }
-          })
-        );
-        if (imageIds.length > 0) {
-          await deleteUpload({
-            ids: imageIds,
-          }).unwrap();
-        }
-      }
-
       switch (action) {
         case 'softDelete':
           response = await softDeletes({ ids }).unwrap();
@@ -233,6 +220,20 @@ const Products = () => {
 
         case 'forceDelete':
           response = await forceDeletes({ ids }).unwrap();
+          if (imageIds.length > 0) {
+            await Promise.all(
+              productDataArray.map(async (productData) => {
+                if (productData?.data.image?.path) {
+                  await deleteAvatarFromCloudinary(productData.data.image.path, token as string);
+                }
+              })
+            );
+            if (imageIds.length > 0) {
+              await deleteUpload({
+                ids: imageIds,
+              }).unwrap();
+            }
+          }
           successMessage = response.message || 'Products force deleted successfully';
           failureMessage = response.message || 'Failed to force delete products';
           break;
@@ -263,6 +264,8 @@ const Products = () => {
         err.data?.message || (error as Error).message?.replace(/^Error:\s*/, '') || 'Something went wrong';
 
       toast.error('Action failed: ' + errorMessage);
+    } finally {
+      setLoadingAction(false);
     }
   };
 
@@ -382,7 +385,7 @@ const Products = () => {
           title='Soft Delete Product'
           description='Are you sure you want to soft delete this product?'
           isVisible={isAnimationModalOpen.softDelete}
-          isLoading={isSoftDeleting || isSoftDeletingUpload}
+          isLoading={loadingAction}
           closeModal={() => closeModal('softDelete')}
           handleDeactivate={() =>
             handleProductAction('softDelete', getModelIdsToHandle(selectedProductIds, currentProduct as IProduct))
@@ -396,7 +399,7 @@ const Products = () => {
           title='Force Delete Product'
           description='Are you sure you want to force delete this product?'
           isVisible={isAnimationModalOpen.forceDelete}
-          isLoading={isForceDeleting || isLoadingDeleteUpload}
+          isLoading={loadingAction}
           closeModal={() => closeModal('forceDelete')}
           handleDeactivate={() =>
             handleProductAction('forceDelete', getModelIdsToHandle(selectedProductIds, currentProduct as IProduct))
@@ -410,7 +413,7 @@ const Products = () => {
           title='Restore Product'
           description='Are you sure you want to restore this product?'
           isVisible={isAnimationModalOpen.restore}
-          isLoading={isRestoring || isRestoringUpload}
+          isLoading={loadingAction}
           closeModal={() => closeModal('restore')}
           handleDeactivate={() =>
             handleProductAction('restore', getModelIdsToHandle(selectedProductIds, currentProduct as IProduct))
@@ -456,7 +459,9 @@ const Products = () => {
               <div className='flex justify-between'>
                 <div>
                   <strong className='block text-gray-600'>Added Date:</strong>
-                  <p className='text-gray-800'>{new Date(currentProduct.createdAt as string).toLocaleDateString()}</p>
+                  <p className='text-gray-800'>
+                    {new Date(currentProduct.createdAt as unknown as string).toLocaleDateString()}
+                  </p>
                 </div>
                 <div className='text-end'>
                   <strong className='block text-gray-600'>Price:</strong>

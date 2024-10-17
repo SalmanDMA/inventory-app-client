@@ -72,7 +72,7 @@ const Profile = () => {
         setIsLoadingUploadAvatar(true);
         const base64Image = avatarPreview;
 
-        if (user?.data?.avatarId) {
+        if (user?.data?.avatarId && user?.data?.avatar) {
           await deleteAvatarFromCloudinary(user.data.avatar.path, token as string);
           await deleteUpload({
             ids: [user.data.avatarId],
@@ -183,13 +183,13 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       formik.setValues({
-        username: user.data.username,
-        name: user.data.name,
-        email: user.data.email,
-        address: user.data.address,
-        phone: user.data.phone,
-        roleId: user.data.roleId,
-        avatarId: user.data.avatarId,
+        username: user.data.username || '',
+        name: user.data.name || '',
+        email: user.data.email || '',
+        address: user.data.address || '',
+        phone: user.data.phone || '',
+        roleId: user.data.roleId || '',
+        avatarId: user.data.avatarId || '',
       });
     }
   }, [user]);

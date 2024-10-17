@@ -32,12 +32,12 @@ import { useFetchFile } from '@/app/hooks/useFetchFile';
 
 const Users = () => {
   const { data: users, isError, isLoading } = useGetUsersQuery();
-  const [softDeletes, { isLoading: isSoftDeleting }] = useSoftDeleteUsersMutation();
-  const [forceDeletes, { isLoading: isForceDeleting }] = useForceDeleteUsersMutation();
-  const [restoreUsers, { isLoading: isRestoring }] = useRestoreUsersMutation();
-  const [deleteUpload, { isLoading: isLoadingDeleteUpload }] = useForceDeleteUploadsMutation();
-  const [softDeleteUpload, { isLoading: isSoftDeletingUpload }] = useSoftDeleteUploadsMutation();
-  const [restoreUpload, { isLoading: isRestoringUpload }] = useRestoreUploadsMutation();
+  const [softDeletes] = useSoftDeleteUsersMutation();
+  const [forceDeletes] = useForceDeleteUsersMutation();
+  const [restoreUsers] = useRestoreUsersMutation();
+  const [deleteUpload] = useForceDeleteUploadsMutation();
+  const [softDeleteUpload] = useSoftDeleteUploadsMutation();
+  const [restoreUpload] = useRestoreUploadsMutation();
 
   const token = useAppSelector((state) => state.global.token);
 
@@ -61,6 +61,7 @@ const Users = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [selectedUserDeletedAt, setSelectedUserDeletedAt] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
+  const [loadingAction, setLoadingAction] = useState<boolean>(false);
 
   const { fileUrl } = useFetchFile(
     currentUser?.avatarId ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${currentUser?.avatarId}` : null,
@@ -146,7 +147,7 @@ const Users = () => {
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.address && user.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
       user.role.name.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
@@ -200,6 +201,7 @@ const Users = () => {
   };
 
   const handleUserAction = async (action: 'softDelete' | 'forceDelete' | 'restore', ids: string[]) => {
+    setLoadingAction(true);
     try {
       if (ids.length === 0) {
         throw new Error('No users selected');
@@ -217,21 +219,6 @@ const Users = () => {
       let successMessage = '';
       let failureMessage = '';
 
-      if (action === 'forceDelete') {
-        await Promise.all(
-          userDataArray.map(async (userData) => {
-            if (userData?.data.avatar?.path) {
-              await deleteAvatarFromCloudinary(userData.data.avatar.path, token as string);
-            }
-          })
-        );
-        if (avatarIds.length > 0) {
-          await deleteUpload({
-            ids: avatarIds,
-          }).unwrap();
-        }
-      }
-
       switch (action) {
         case 'softDelete':
           response = await softDeletes({ ids }).unwrap();
@@ -244,6 +231,20 @@ const Users = () => {
 
         case 'forceDelete':
           response = await forceDeletes({ ids }).unwrap();
+          if (avatarIds.length > 0) {
+            await Promise.all(
+              userDataArray.map(async (userData) => {
+                if (userData?.data.avatar?.path) {
+                  await deleteAvatarFromCloudinary(userData.data.avatar.path, token as string);
+                }
+              })
+            );
+            if (avatarIds.length > 0) {
+              await deleteUpload({
+                ids: avatarIds,
+              }).unwrap();
+            }
+          }
           successMessage = response.message || 'Users force deleted successfully';
           failureMessage = response.message || 'Failed to force delete users';
           break;
@@ -274,6 +275,8 @@ const Users = () => {
         err.data?.message || (error as Error).message?.replace(/^Error:\s*/, '') || 'Something went wrong';
 
       toast.error('Action failed: ' + errorMessage);
+    } finally {
+      setLoadingAction(false);
     }
   };
 
@@ -393,7 +396,7 @@ const Users = () => {
           title='Soft Delete User'
           description='Are you sure you want to soft delete this user?'
           isVisible={isAnimationModalOpen.softDelete}
-          isLoading={isSoftDeleting || isSoftDeletingUpload}
+          isLoading={loadingAction}
           closeModal={() => closeModal('softDelete')}
           handleDeactivate={() =>
             handleUserAction('softDelete', getModelIdsToHandle(selectedUserIds, currentUser as IUser))
@@ -407,7 +410,7 @@ const Users = () => {
           title='Force Delete User'
           description='Are you sure you want to force delete this user?'
           isVisible={isAnimationModalOpen.forceDelete}
-          isLoading={isForceDeleting || isLoadingDeleteUpload}
+          isLoading={loadingAction}
           closeModal={() => closeModal('forceDelete')}
           handleDeactivate={() =>
             handleUserAction('forceDelete', getModelIdsToHandle(selectedUserIds, currentUser as IUser))
@@ -421,7 +424,7 @@ const Users = () => {
           title='Restore User'
           description='Are you sure you want to restore this user?'
           isVisible={isAnimationModalOpen.restore}
-          isLoading={isRestoring || isRestoringUpload}
+          isLoading={loadingAction}
           closeModal={() => closeModal('restore')}
           handleDeactivate={() =>
             handleUserAction('restore', getModelIdsToHandle(selectedUserIds, currentUser as IUser))

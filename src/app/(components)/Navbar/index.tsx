@@ -20,7 +20,7 @@ const Navbar = () => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const token = useAppSelector((state) => state.global.token);
   const { fileUrl } = useFetchFile(
-    userLogin.avatarId ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${userLogin.avatarId}` : null,
+    userLogin?.avatarId ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${userLogin?.avatarId}` : null,
     token as string
   );
 

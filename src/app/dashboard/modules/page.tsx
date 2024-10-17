@@ -17,7 +17,7 @@ import {
 } from '@/state/api';
 import { IModule } from '@/types/model';
 import { ResponseError } from '@/types/response';
-import { buildModuleTree, getModelIdsToHandle, getRowClassName } from '@/utils/common';
+import { buildTree, getModelIdsToHandle, getRowClassName } from '@/utils/common';
 import { Box } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from '@mui/x-data-grid';
 import * as lucideIcons from 'lucide-react';
@@ -311,7 +311,7 @@ const Modules = () => {
         const filteredModules = allQueryModules.filter((role) => {
           const matchesSearch =
             role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            role.description.toLowerCase().includes(searchQuery.toLowerCase());
+            (role.description && role.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
           const matchesStatus =
             filterStatus === 'All' ||
@@ -322,7 +322,11 @@ const Modules = () => {
         });
 
         // Build the tree with the filtered modules
-        const tree = buildModuleTree(filteredModules);
+        const tree = buildTree(
+          filteredModules,
+          (module) => module.moduleId,
+          (module) => module.parentId
+        );
         setModulesTree(tree);
       }
     };
@@ -343,6 +347,7 @@ const Modules = () => {
       {/* HEADER BAR */}
       <HeaderWithFilterMenu
         title='Modules'
+        type='modules'
         typeTagHtml='modal'
         setSearchQuery={handleSearchQuery}
         dropdownRef={menuActionButtonRef}

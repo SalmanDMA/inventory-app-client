@@ -2,7 +2,7 @@
 import { useAppDispatch, useAppSelector } from '@/app/redux';
 import { setIsSidebarCollapsed } from '@/state';
 import { useGetRoleModulesQuery } from '@/state/api';
-import { IModule, IRoleModule } from '@/types/model';
+import { IModule, IRoleModules } from '@/types/model';
 import { Tooltip } from '@mui/material';
 import * as Icons from 'lucide-react';
 import Image from 'next/image';
@@ -141,7 +141,7 @@ const Sidebar = () => {
 
       {/* Links */}
       <div className='flex-grow mt-8'>
-        {roleModules?.data.map((item: IRoleModule) => {
+        {roleModules?.data.map((item: IRoleModules) => {
           const moduleData = item.module;
           if (
             item.checked &&
@@ -158,7 +158,7 @@ const Sidebar = () => {
               >
                 {moduleData.childModules.map((child: IModule) => {
                   const roleModuleForChild = child?.roleModules?.find(
-                    (roleModule: IRoleModule) => Number(roleModule.moduleId) === Number(child.moduleId)
+                    (roleModule: IRoleModules) => Number(roleModule.moduleId) === Number(child.moduleId)
                   );
 
                   if (roleModuleForChild?.checked) {

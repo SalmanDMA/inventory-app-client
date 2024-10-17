@@ -9,7 +9,7 @@ import {
   IPurchase,
   IPurchaseDetail,
   ISale,
-  ISaleDetail,
+  ISalesDetail,
   IStockMovement,
   ISupplier,
 } from '@/types/model';
@@ -26,9 +26,11 @@ type ModelTypes =
   | IPurchase
   | IPurchaseDetail
   | ISale
-  | ISaleDetail
+  | ISalesDetail
   | IStockMovement
   | ISupplier;
+
+type TreeNode<T> = T & { children: T[] };
 
 export const getRowClassName = (params: GridRowParams, filterStatus: string) => {
   if (filterStatus === 'All' && params.row.deletedAt) {
@@ -83,21 +85,26 @@ export const getRandomColor = () => {
   return color;
 };
 
-export const buildModuleTree = (modules: IModule[]): IModule[] => {
-  const moduleMap: { [key: string]: IModule } = {};
-  const tree: IModule[] = [];
+export const buildTree = <T>(
+  items: T[],
+  getId: (item: T) => string,
+  getParentId: (item: T) => string | null
+): TreeNode<T>[] => {
+  const itemMap: { [key: string]: TreeNode<T> } = {};
+  const tree: TreeNode<T>[] = [];
 
-  modules.forEach((module) => {
-    moduleMap[module.moduleId] = { ...module, childModules: [] };
+  items.forEach((item) => {
+    itemMap[getId(item)] = { ...item, children: [] };
   });
 
-  modules.forEach((module) => {
-    if (module.parentId === null) {
-      tree.push(moduleMap[module.moduleId]);
+  items.forEach((item) => {
+    const parentId = getParentId(item);
+    if (parentId === null) {
+      tree.push(itemMap[getId(item)]);
     } else {
-      const parentModule = moduleMap[module.parentId];
-      if (parentModule) {
-        parentModule.childModules!.push(moduleMap[module.moduleId]);
+      const parentItem = itemMap[parentId];
+      if (parentItem) {
+        parentItem.children.push(itemMap[getId(item)]);
       }
     }
   });
@@ -107,4 +114,34 @@ export const buildModuleTree = (modules: IModule[]): IModule[] => {
 
 export const removeFileExtension = (filename: string): string => {
   return filename.substring(0, filename.lastIndexOf('.')) || filename;
+};
+
+export const formatToMMDDYYYY = (date: string | Date | undefined | '') => {
+  if (!date) return '';
+
+  let dateString;
+  if (typeof date === 'string') {
+    dateString = date.split('T')[0];
+  } else if (date instanceof Date) {
+    dateString = date.toISOString().split('T')[0];
+  } else {
+    return '';
+  }
+
+  const [year, month, day] = dateString.split('-');
+  return `${year}-${month}-${day}`;
+};
+
+export const formatToISOString = (date: string | Date | undefined | '') => {
+  if (!date) return undefined;
+
+  if (typeof date === 'string') {
+    return new Date(date).toISOString();
+  }
+
+  if (date instanceof Date) {
+    return date.toISOString();
+  }
+
+  return undefined;
 };

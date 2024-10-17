@@ -37,7 +37,7 @@ import {
 } from '@/types/response';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { GlobalStateTypes } from '@/types/state';
-import { DashboardMetrics } from '@/types/model';
+// import { DashboardMetrics } from '@/types/model';
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -126,7 +126,7 @@ export const api = createApi({
     forceDeleteProducts: build.mutation<ResponseProduct, { ids: string[] }>({
       query: (data) => ({
         url: '/products/force-delete',
-        method: 'PUT',
+        method: 'DELETE',
         body: data,
       }),
       invalidatesTags: ['Products'],

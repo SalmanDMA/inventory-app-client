@@ -280,6 +280,7 @@ const Warehouses = () => {
       {/* HEADER BAR */}
       <HeaderWithFilterMenu
         title='Warehouses'
+        type='warehouses'
         typeTagHtml='modal'
         setSearchQuery={handleSearchQuery}
         dropdownRef={menuActionButtonRef}

@@ -2,9 +2,9 @@
 
 import { useAppSelector } from '@/app/redux';
 import { useCreateOrUpdateRoleModuleMutation, useGetModulesQuery } from '@/state/api';
-import { IModule, IRoleModule } from '@/types/model';
+import { IModule, IRoleModules } from '@/types/model';
 import { ResponseError } from '@/types/response';
-import { buildModuleTree } from '@/utils/common';
+import { buildTree } from '@/utils/common';
 import { fetchRoleModuleByRoleId } from '@/utils/httpClient';
 import { ChevronDown, ChevronRight, File } from 'lucide-react';
 import Image from 'next/image';
@@ -34,10 +34,14 @@ const RoleModule = ({
 
         const roleModuleData = await fetchRoleModuleByRoleId(selectedRoleIds[0], token as string);
 
-        const tree = buildModuleTree(allQueryModules);
+        const tree = buildTree(
+          allQueryModules,
+          (module) => module.moduleId,
+          (module) => module.parentId
+        );
         setModules(tree);
 
-        const checkedMap = roleModuleData.data.reduce((acc: { [key: string]: boolean }, roleModule: IRoleModule) => {
+        const checkedMap = roleModuleData.data.reduce((acc: { [key: string]: boolean }, roleModule: IRoleModules) => {
           acc[roleModule.moduleId] = roleModule.checked;
           return acc;
         }, {});

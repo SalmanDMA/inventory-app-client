@@ -189,7 +189,7 @@ const HeaderWithFilterMenu: React.FC<HeaderWithFilterMenuProps> = ({
                         {typeTagHtml === 'link' ? (
                           <Link
                             className='flex items-center w-full'
-                            href={`/dashboard/users/${selectedModels[0]}/edit`}
+                            href={`/dashboard/${type}/${selectedModels[0]}/edit`}
                           >
                             <PencilIcon className='w-5 h-5 mr-2' /> Edit
                           </Link>

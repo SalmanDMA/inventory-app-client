@@ -35,8 +35,8 @@ const RoleForm = ({
 
   const validationSchema = Yup.object({
     name: Yup.string().required('Name is required'),
-    alias: Yup.string().required('Alias is required'),
-    color: Yup.string().required('Color is required'),
+    alias: Yup.string(),
+    color: Yup.string(),
     description: Yup.string(),
   });
 
@@ -81,9 +81,9 @@ const RoleForm = ({
       const currentRole = roles.find((role) => role.roleId === roleId);
       if (currentRole) {
         formik.setValues({
-          name: currentRole.name,
-          alias: currentRole.alias,
-          color: currentRole.color,
+          name: currentRole.name || '',
+          alias: currentRole.alias || '',
+          color: currentRole.color || '',
           description: currentRole.description || '',
         });
       }

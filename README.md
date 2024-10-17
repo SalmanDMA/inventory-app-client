@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ManStock - Inventory Management ( CLIENT )
 
-## Getting Started
+ManStock adalah aplikasi manajemen inventory yang memungkinkan pengguna untuk melacak produk, supplier, customer, dan stok barang dalam beberapa warehouse. Aplikasi ini mendukung pengelolaan user, role, dan akses modul berdasarkan peran yang ditetapkan. Terdapat fitur lengkap mulai dari CRUD user, produk, kategori, brand, customer, supplier, hingga laporan untuk barang masuk dan keluar.
 
-First, run the development server:
+## Fitur Utama
+
+- **Manajemen User**: CRUD user dan role, serta autentikasi login menggunakan email atau username (tanpa pengiriman notifikasi email).
+- **Pengelolaan Warehouse**: Membuat dan mengelola warehouse untuk memantau stok produk.
+- **Manajemen Produk**: CRUD produk, termasuk kategori, brand, dan penyesuaian modul sesuai role user.
+- **Manajemen Customer dan Supplier**: CRUD customer dan supplier untuk mencatat hubungan bisnis.
+- **Dashboard & Laporan**: Menyediakan informasi ringkasan penjualan, pembelian, barang populer, serta pengeluaran terkait produk.
+- **Autentikasi**: Autentikasi menggunakan email atau username, tanpa notifikasi email.
+- **Modular Access**: Pengelolaan akses modul berdasarkan role pengguna.
+- **Report Barang**: Laporan barang masuk dan keluar dengan manajemen warehouse.
+
+## Teknologi yang Digunakan
+
+- **Framework**: [Next.js](https://nextjs.org/) (TypeScript)
+- **State Management**: Redux & Redux Toolkit Query
+- **UI Framework**: Material UI (MUI) & Tailwind CSS
+- **Backend**: Node.js
+- **Package Manager**: npm
+
+## Prasyarat
+
+Pastikan Anda memiliki hal berikut sebelum menjalankan proyek ini:
+
+- **Node.js** (v14 atau lebih baru)
+- **npm** (v6 atau lebih baru)
+
+## Instalasi
+
+Ikuti langkah-langkah di bawah ini untuk menjalankan proyek secara lokal.
+
+### 1. Clone repositori
+
+```bash
+git clone https://github.com/username/ManStock.git
+```
+
+### 2. Masuk ke direktori proyek
+
+```bash
+cd ManStock
+```
+
+### 3. Instal dependensi
+
+```bash
+npm install
+```
+
+### 4. Set up file environment
+
+Buat file `.env.local` di root direktori proyek dan masukkan variabel berikut:
+
+```bash
+BASE_URL=http://your-api-url.com
+```
+
+Anda juga dapat membuat file .env.staging dan .env.production jika diperlukan.
+
+### 5. Jalankan proyek
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka http://localhost:3000 untuk melihat aplikasi.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+ManStock adalah aplikasi sederhana namun lengkap untuk mengelola inventaris barang dalam berbagai warehouse dan melacak supplier serta customer dengan mudah. Selamat menggunakan!
