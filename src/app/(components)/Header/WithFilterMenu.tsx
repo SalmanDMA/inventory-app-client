@@ -27,6 +27,8 @@ interface HeaderWithFilterMenuProps {
     | 'products'
     | 'brands'
     | 'categories'
+    | 'customers'
+    | 'productHistories'
     | 'purchases'
     | 'purchaseDetails'
     | 'sales'

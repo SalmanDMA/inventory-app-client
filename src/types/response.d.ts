@@ -155,6 +155,30 @@ export interface ResponseBrand {
   data: IBrand;
 }
 
+export interface ResponseProductHistories {
+  success: boolean;
+  message: string;
+  data: IProductHistory[];
+}
+
+export interface ResponseProductHistory {
+  success: boolean;
+  message: string;
+  data: IProductHistory;
+}
+
+export interface ResponseCustomers {
+  success: boolean;
+  message: string;
+  data: ICustomer[];
+}
+
+export interface ResponseCustomer {
+  success: boolean;
+  message: string;
+  data: ICustomer;
+}
+
 export interface ResponseSuppliers {
   success: boolean;
   message: string;

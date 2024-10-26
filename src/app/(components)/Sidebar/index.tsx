@@ -44,7 +44,7 @@ const Accordion = ({ label, icon, children, isCollapsed }: AccordionProps) => {
   return (
     <div>
       {isCollapsed ? (
-        <Tooltip title='Click for show another link' placement={'right'}>
+        <Tooltip title={`Click for show ${label.toLocaleLowerCase()} content`} placement={'right'}>
           {content}
         </Tooltip>
       ) : (

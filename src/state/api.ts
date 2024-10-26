@@ -1,9 +1,11 @@
 import {
   CreateOrUpdateBrandFormValues,
   CreateOrUpdateCategoryFormValues,
+  CreateOrUpdateCustomerFormValues,
   CreateOrUpdateModuleFormValues,
   CreateOrUpdateModuleTypeFormValues,
   CreateOrUpdateProductFormValues,
+  CreateOrUpdateProductHistoryFormValues,
   CreateOrUpdateRoleFormValues,
   CreateOrUpdateSupplierFormValues,
   CreateOrUpdateUploadFormValues,
@@ -16,11 +18,15 @@ import {
   ResponseBrands,
   ResponseCategories,
   ResponseCategory,
+  ResponseCustomer,
+  ResponseCustomers,
   ResponseModule,
   ResponseModules,
   ResponseModuleType,
   ResponseModuleTypes,
   ResponseProduct,
+  ResponseProductHistories,
+  ResponseProductHistory,
   ResponseProducts,
   ResponseRole,
   ResponseRoleModule,
@@ -70,6 +76,8 @@ export const api = createApi({
     'Categories',
     'Brands',
     'Suppliers',
+    'ProductHistories',
+    'Customers',
   ],
   endpoints: (build) => ({
     getDashboardMetrics: build.query<DashboardMetrics, void>({
@@ -538,18 +546,18 @@ export const api = createApi({
 
     // Category
     getCategories: build.query<ResponseCategories, void>({
-      query: () => '/categories',
+      query: () => '/products/categories',
       providesTags: ['Categories'],
     }),
 
     getCategory: build.query<ResponseCategory, { categoryId: string }>({
-      query: ({ categoryId }) => `/categories/${categoryId}`,
+      query: ({ categoryId }) => `/products/categories/${categoryId}`,
       providesTags: ['Categories'],
     }),
 
     createCategory: build.mutation<ResponseCategory, CreateOrUpdateCategoryFormValues>({
       query: (data) => ({
-        url: '/categories',
+        url: '/products/categories',
         method: 'POST',
         body: data,
       }),
@@ -558,7 +566,7 @@ export const api = createApi({
 
     updateCategory: build.mutation<ResponseCategory, CreateOrUpdateCategoryFormValues>({
       query: (data) => ({
-        url: `/categories/${data.categoryId}`,
+        url: `/products/categories/${data.categoryId}`,
         method: 'PUT',
         body: data,
       }),
@@ -567,7 +575,7 @@ export const api = createApi({
 
     softDeleteCategories: build.mutation<ResponseCategory, { ids: string[] }>({
       query: (data) => ({
-        url: '/categories/soft-delete',
+        url: '/products/categories/soft-delete',
         method: 'PUT',
         body: data,
       }),
@@ -576,7 +584,7 @@ export const api = createApi({
 
     forceDeleteCategories: build.mutation<ResponseCategory, { ids: string[] }>({
       query: (data) => ({
-        url: '/categories/force-delete',
+        url: '/products/categories/force-delete',
         method: 'DELETE',
         body: data,
       }),
@@ -585,7 +593,7 @@ export const api = createApi({
 
     restoreCategories: build.mutation<ResponseCategory, { ids: string[] }>({
       query: (data) => ({
-        url: '/categories/restore',
+        url: '/products/categories/restore',
         method: 'PUT',
         body: data,
       }),
@@ -594,18 +602,18 @@ export const api = createApi({
 
     // Brand
     getBrands: build.query<ResponseBrands, void>({
-      query: () => '/brands',
+      query: () => '/products/brands',
       providesTags: ['Brands'],
     }),
 
     getBrand: build.query<ResponseBrand, { brandId: string }>({
-      query: ({ brandId }) => `/brands/${brandId}`,
+      query: ({ brandId }) => `/products/brands/${brandId}`,
       providesTags: ['Brands'],
     }),
 
     createBrand: build.mutation<ResponseBrand, CreateOrUpdateBrandFormValues>({
       query: (data) => ({
-        url: '/brands',
+        url: '/products/brands',
         method: 'POST',
         body: data,
       }),
@@ -614,7 +622,7 @@ export const api = createApi({
 
     updateBrand: build.mutation<ResponseBrand, CreateOrUpdateBrandFormValues>({
       query: (data) => ({
-        url: `/brands/${data.brandId}`,
+        url: `/products/brands/${data.brandId}`,
         method: 'PUT',
         body: data,
       }),
@@ -623,7 +631,7 @@ export const api = createApi({
 
     softDeleteBrands: build.mutation<ResponseBrand, { ids: string[] }>({
       query: (data) => ({
-        url: '/brands/soft-delete',
+        url: '/products/brands/soft-delete',
         method: 'PUT',
         body: data,
       }),
@@ -632,7 +640,7 @@ export const api = createApi({
 
     forceDeleteBrands: build.mutation<ResponseBrand, { ids: string[] }>({
       query: (data) => ({
-        url: '/brands/force-delete',
+        url: '/products/brands/force-delete',
         method: 'DELETE',
         body: data,
       }),
@@ -641,11 +649,123 @@ export const api = createApi({
 
     restoreBrands: build.mutation<ResponseBrand, { ids: string[] }>({
       query: (data) => ({
-        url: '/brands/restore',
+        url: '/products/brands/restore',
         method: 'PUT',
         body: data,
       }),
       invalidatesTags: ['Brands'],
+    }),
+
+    // History
+    getProductHistories: build.query<ResponseProductHistories, void>({
+      query: () => '/products/histories',
+      providesTags: ['ProductHistories'],
+    }),
+
+    getProductHistory: build.query<ResponseProductHistory, { productHistoryId: string }>({
+      query: ({ productHistoryId }) => `/products/histories/${productHistoryId}`,
+      providesTags: ['ProductHistories'],
+    }),
+
+    createProductHistory: build.mutation<ResponseProductHistory, CreateOrUpdateProductHistoryFormValues>({
+      query: (data) => ({
+        url: '/products/histories',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['ProductHistories'],
+    }),
+
+    updateProductHistory: build.mutation<ResponseProductHistory, CreateOrUpdateProductHistoryFormValues>({
+      query: (data) => ({
+        url: `/products/histories/${data.productHistoryId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['ProductHistories'],
+    }),
+
+    softDeleteProductHistories: build.mutation<ResponseProductHistory, { ids: string[] }>({
+      query: (data) => ({
+        url: '/products/histories/soft-delete',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['ProductHistories'],
+    }),
+
+    forceDeleteProductHistories: build.mutation<ResponseProductHistory, { ids: string[] }>({
+      query: (data) => ({
+        url: '/products/histories/force-delete',
+        method: 'DELETE',
+        body: data,
+      }),
+      invalidatesTags: ['ProductHistories'],
+    }),
+
+    restoreProductHistories: build.mutation<ResponseProductHistory, { ids: string[] }>({
+      query: (data) => ({
+        url: '/products/histories/restore',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['ProductHistories'],
+    }),
+
+    // Customer
+    getCustomers: build.query<ResponseCustomers, void>({
+      query: () => '/customers',
+      providesTags: ['Customers'],
+    }),
+
+    getCustomer: build.query<ResponseCustomer, { customerId: string }>({
+      query: ({ customerId }) => `/customers/${customerId}`,
+      providesTags: ['Customers'],
+    }),
+
+    createCustomer: build.mutation<ResponseCustomer, CreateOrUpdateCustomerFormValues>({
+      query: (data) => ({
+        url: '/customers',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Customers'],
+    }),
+
+    updateCustomer: build.mutation<ResponseCustomer, CreateOrUpdateCustomerFormValues>({
+      query: (data) => ({
+        url: `/customers/${data.customerId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Customers'],
+    }),
+
+    softDeleteCustomers: build.mutation<ResponseCustomer, { ids: string[] }>({
+      query: (data) => ({
+        url: '/customers/soft-delete',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Customers'],
+    }),
+
+    forceDeleteCustomers: build.mutation<ResponseCustomer, { ids: string[] }>({
+      query: (data) => ({
+        url: '/customers/force-delete',
+        method: 'DELETE',
+        body: data,
+      }),
+      invalidatesTags: ['Customers'],
+    }),
+
+    restoreCustomers: build.mutation<ResponseCustomer, { ids: string[] }>({
+      query: (data) => ({
+        url: '/customers/restore',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Customers'],
     }),
 
     // Supplier
@@ -780,6 +900,20 @@ export const {
   useSoftDeleteBrandsMutation,
   useForceDeleteBrandsMutation,
   useRestoreBrandsMutation,
+  useGetProductHistoriesQuery,
+  useGetProductHistoryQuery,
+  useCreateProductHistoryMutation,
+  useUpdateProductHistoryMutation,
+  useSoftDeleteProductHistoriesMutation,
+  useForceDeleteProductHistoriesMutation,
+  useRestoreProductHistoriesMutation,
+  useGetCustomersQuery,
+  useGetCustomerQuery,
+  useCreateCustomerMutation,
+  useUpdateCustomerMutation,
+  useSoftDeleteCustomersMutation,
+  useForceDeleteCustomersMutation,
+  useRestoreCustomersMutation,
   useGetSuppliersQuery,
   useGetSupplierQuery,
   useCreateSupplierMutation,

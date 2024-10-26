@@ -12,6 +12,8 @@ import {
   ISalesDetail,
   IStockMovement,
   ISupplier,
+  IProductHistory,
+  ICustomer,
 } from '@/types/model';
 import { GridRowParams } from '@mui/x-data-grid';
 
@@ -21,6 +23,7 @@ type ModelTypes =
   | IModule
   | IWarehouse
   | IProduct
+  | IProductHistory
   | IBrand
   | ICategory
   | IPurchase
@@ -28,6 +31,7 @@ type ModelTypes =
   | ISale
   | ISalesDetail
   | IStockMovement
+  | ICustomer
   | ISupplier;
 
 type TreeNode<T> = T & { children: T[] };
@@ -45,6 +49,8 @@ export const getModelIdsToHandle = <T extends ModelTypes>(modelIds: string[] | n
   }
 
   switch (true) {
+    case 'productHistoryId' in currentModel:
+      return [currentModel.productHistoryId as string];
     case 'userId' in currentModel:
       return [currentModel.userId];
     case 'roleId' in currentModel:
@@ -69,6 +75,8 @@ export const getModelIdsToHandle = <T extends ModelTypes>(modelIds: string[] | n
       return [currentModel.saleDetailId as string];
     case 'stockMovementId' in currentModel:
       return [currentModel.stockMovementId as string];
+    case 'customerId' in currentModel:
+      return [currentModel.customerId as string];
     case 'supplierId' in currentModel:
       return [currentModel.supplierId as string];
     default:

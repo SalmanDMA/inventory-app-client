@@ -12,6 +12,8 @@ import {
   ISalesDetail,
   IStockMovement,
   ISupplier,
+  IProductHistory,
+  ICustomer,
 } from '@/types/model';
 import { ArchiveRestoreIcon, PencilIcon, PlusCircleIcon, Trash2Icon, TrashIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -23,6 +25,7 @@ type ModelWithId =
   | IModule
   | IWarehouse
   | IProduct
+  | IProductHistory
   | IBrand
   | ICategory
   | IPurchase
@@ -30,6 +33,7 @@ type ModelWithId =
   | ISale
   | ISalesDetail
   | IStockMovement
+  | ICustomer
   | ISupplier;
 
 interface MenuContextProps<T extends ModelWithId> {
@@ -41,6 +45,8 @@ interface MenuContextProps<T extends ModelWithId> {
     | 'products'
     | 'brands'
     | 'categories'
+    | 'customers'
+    | 'productHistories'
     | 'purchases'
     | 'purchaseDetails'
     | 'sales'
@@ -71,6 +77,8 @@ const getModelId = (currentItem: ModelWithId) => {
       return (currentItem as IWarehouse).warehouseId;
     case 'productId' in currentItem:
       return (currentItem as IProduct).productId;
+    case 'productHistoryId' in currentItem:
+      return (currentItem as unknown as IProductHistory).productHistoryId;
     case 'brandId' in currentItem:
       return (currentItem as IBrand).brandId;
     case 'categoryId' in currentItem:
@@ -85,6 +93,8 @@ const getModelId = (currentItem: ModelWithId) => {
       return (currentItem as unknown as ISalesDetail).salesDetailId;
     case 'stockMovementId' in currentItem:
       return (currentItem as unknown as IStockMovement).stockMovementId;
+    case 'customerId' in currentItem:
+      return (currentItem as ICustomer).customerId;
     case 'supplierId' in currentItem:
       return (currentItem as ISupplier).supplierId;
     default:

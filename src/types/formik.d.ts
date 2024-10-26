@@ -146,7 +146,7 @@ export interface CreateOrUpdateCustomerFormValues {
   name: string;
   email: string;
   phone: string;
-  address: string;
+  address?: string;
   companyName?: string;
   taxNumber?: string;
   contractStartDate?: string | Date | '';
@@ -166,6 +166,14 @@ export interface CreateOrUpdateBrandFormValues {
   alias?: string;
   color?: string;
   publicId?: string;
+}
+
+export interface CreateOrUpdateProductHistoryFormValues {
+  productHistoryId?: string;
+  productId: string;
+  oldPrice: number | '';
+  newPrice: number | '';
+  userId?: string;
 }
 
 export interface CreateOrUpdateCategoryFormValues {

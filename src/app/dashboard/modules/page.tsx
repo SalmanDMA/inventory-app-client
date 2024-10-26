@@ -110,7 +110,8 @@ const Modules = () => {
       headerName: 'Description',
       width: 250,
       flex: 1,
-      renderCell: (params) => <span>{params.row.description}</span>,
+      renderCell: (params) => <span>{params.row.description ? `${params.row.description}` : '-'}</span>,
+      valueGetter: (params) => params,
     },
     {
       field: 'route',
