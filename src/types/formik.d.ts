@@ -171,7 +171,7 @@ export interface CreateOrUpdateBrandFormValues {
 export interface CreateOrUpdateProductHistoryFormValues {
   productHistoryId?: string;
   productId: string;
-  oldPrice: number | '';
+  oldPrice?: number | '';
   newPrice: number | '';
   userId?: string;
 }

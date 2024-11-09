@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import HeaderWithFilterMenu from '@/app/(components)/Header/WithFilterMenu';
 import MenuAction from '@/app/(components)/Menu/Action';
 import MenuContext from '@/app/(components)/Menu/Context';
@@ -11,24 +12,25 @@ import { useSearchQuery } from '@/app/hooks/useSearchQuery';
 import {
   useForceDeleteProductHistoriesMutation,
   useGetProductHistoriesQuery,
-  useRestoreProductHistoriesMutation,
+  useGetUniqueProductHistoriesQuery,
+  useRestoreProductHistoriesMutation, 
   useSoftDeleteProductHistoriesMutation,
 } from '@/state/api';
 import { IProduct, IProductHistory } from '@/types/model';
 import { ResponseError } from '@/types/response';
 import { formatToMMDDYYYY, getModelIdsToHandle, getRandomColor, getRowClassName } from '@/utils/common';
-import { Box } from '@mui/material';
+import { Box, Button, Divider, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from '@mui/x-data-grid';
-import { MoreVerticalIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import ProductHistoryForm from '@/app/(components)/Modal/ProductHistoryForm';
-import Image from 'next/image';
 import { useFetchFile } from '@/app/hooks/useFetchFile';
 import { useAppSelector } from '@/app/redux';
+import { MoreVerticalIcon } from 'lucide-react';
 
 const ProductHistories = () => {
-  const { data: productHistories, isError, isLoading } = useGetProductHistoriesQuery();
+  const { data: uniqueProductHistories, isError, isLoading } = useGetUniqueProductHistoriesQuery();
+  const { data: productHistories, isError: isErrorProductHistories, isLoading: isLoadingProductHistories } = useGetProductHistoriesQuery();
   const [softDeletes] = useSoftDeleteProductHistoriesMutation();
   const [forceDeletes] = useForceDeleteProductHistoriesMutation();
   const [restoreProductHistories] = useRestoreProductHistoriesMutation();
@@ -55,7 +57,9 @@ const ProductHistories = () => {
   const [selectedProductHistoryIds, setSelectedProductHistoryIds] = useState<string[]>([]);
   const [selectedProductHistoryDeletedAt, setSelectedProductHistoryDeletedAt] = useState<string[]>([]);
   const [currentProductHistory, setCurrentProductHistory] = useState<IProductHistory | null>(null);
+  const [allProductHistories, setAllProductHistories] = useState<IProductHistory[] | []>([]);
   const [loadingAction, setLoadingAction] = useState<boolean>(false);
+  const [currentProductHistoryModalAction, setCurrentProductHistoryModalAction] = useState<IProductHistory | null>(null);
 
   const { fileUrl } = useFetchFile(
     currentProductHistory?.product?.imageId
@@ -143,7 +147,7 @@ const ProductHistories = () => {
   ];
 
   // Handle search and filter
-  const filteredProductHistories = productHistories?.data?.filter((productHistory) => {
+  const filteredProductHistories = uniqueProductHistories?.data?.filter((productHistory) => {
     const matchesSearch =
       productHistory.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       productHistory.newPrice.toString().includes(searchQuery.toLowerCase()) ||
@@ -160,6 +164,7 @@ const ProductHistories = () => {
   // Handle double click to open modal
   const handleRowDoubleClick = (params: GridRowParams) => {
     setCurrentProductHistory(params.row);
+    setAllProductHistories(productHistories?.data.filter((productHistory: IProductHistory) => productHistory.productId === params.row.productId) || []);
     openModal('detail');
   };
 
@@ -254,6 +259,17 @@ const ProductHistories = () => {
     }
   };
 
+  // const handleActionModalProductHistory = ({action, data}: {action: 'forceDelete' | 'update', data: IProductHistory}) => {
+  //   if (action === 'forceDelete') {
+  //     setCurrentProductHistoryModalAction(data);
+  //     openModal('forceDelete');
+  //   } else {
+  //     setCurrentProductHistoryModalAction(data);
+  //     setCurrentProductHistory(data);
+  //     openModal('update');
+  //   }
+  // }
+
   // Handle click outside context menu to close it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -289,11 +305,11 @@ const ProductHistories = () => {
     };
   }, [contextMenu, openMenuActionTable]);
 
-  if (isLoading) {
+  if (isLoading || isLoadingProductHistories) {
     return <div className='py-4'>Loading...</div>;
   }
 
-  if (isError || !productHistories) {
+  if (isError || isErrorProductHistories || !productHistories) {
     return <div className='text-center text-red-500 py-4'>Failed to fetch data</div>;
   }
 
@@ -459,16 +475,73 @@ const ProductHistories = () => {
               <hr className='my-4 border-t-2 border-gray-200' />
 
               {/* Data Information */}
-              {/* <div className='space-y-4'>
-                <div>
-                  <strong className='block text-gray-600'>New Price:</strong>
-                  <p className='text-gray-800'>{currentProductHistory.}</p>
-                </div>
-                <div>
-                  <strong className='block text-gray-600'>Added Since:</strong>
-                  <p className='text-gray-800'>{new Date(currentProductHistory.createdAt).toLocaleDateString()}</p>
-                </div>
-              </div> */}
+              <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, maxHeight: 250, overflow: 'auto' }}>
+                <Typography variant="h4" component="h2" gutterBottom align='center'>
+                  History
+                </Typography>
+                <List>
+                  {allProductHistories.map((history, index) => {
+                    const isLastItem = index === allProductHistories.length - 1;
+                    return (
+                      <ListItem key={history.productHistoryId} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: '8px' }}>
+                        <ListItemIcon>
+                          <Image
+                            src={history?.product?.image?.path || 'https://res.cloudinary.com/dz5jq5jds/image/upload/v1661375653/inventory-app/kqxu49becrexogjdwsix'}
+                            alt={history?.user?.name || 'avatar'}
+                            className='object-cover size-10 rounded-full'
+                            height={100}
+                            width={100}
+                          />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Typography variant="h6">
+                              <strong>Date: {new Date(history.createdAt).toLocaleDateString()}</strong>
+                            </Typography>
+                          }
+                          secondary={
+                            <>
+                              <Typography>
+                                <strong>New Price:</strong> ${history.newPrice.toFixed(2)}
+                              </Typography>
+                              <Typography>
+                                <strong>Old Price:</strong> ${history.oldPrice.toFixed(2)}
+                              </Typography>
+                              <Typography>
+                                <strong>User:</strong> {history?.user?.name} ({history?.user?.username})
+                              </Typography>
+                              <Box sx={{ display: 'flex', justifyContent: "flex-end", alignItems: 'center', mt: 1 }}>
+                                <Button variant="outlined" color="primary" onClick={() => {
+                                  setCurrentProductHistory(history);
+                                  openModal('update');
+                                }}>
+                                  Edit
+                                </Button>
+                                {!isLastItem && (
+                                  <Button
+                                    variant="outlined"
+                                    color="secondary"
+                                    onClick={() => {
+                                      setCurrentProductHistory(history);
+                                      openModal('forceDelete');
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                )}
+                              </Box>
+                              <Divider sx={{ my: 1 }} />
+                              <Typography variant="body2" color="text.secondary">
+                                {history?.product?.name} - SKU: {history?.product?.sku}
+                              </Typography>
+                            </>
+                          }
+                        />
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </Box>
 
               {/* Divider */}
               <hr className='my-4 border-t-2 border-gray-200' />

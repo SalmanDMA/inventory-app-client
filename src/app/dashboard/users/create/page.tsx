@@ -172,7 +172,6 @@ const Page = () => {
       };
 
       const response = await createUser(dataToSend).unwrap();
-
       if (deletedAvatars.length > 0) {
         await Promise.all(
           deletedAvatars.map(async (avatar) => {

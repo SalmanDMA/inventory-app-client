@@ -29,14 +29,12 @@ const ProductHistoryForm = ({
   // Initialize form values
   const initialValues: CreateOrUpdateProductHistoryFormValues = {
     newPrice: '',
-    oldPrice: '',
     productId: '',
   };
 
   // Validation schema
   const validationSchema = Yup.object({
     newPrice: Yup.number().required('New price is required'),
-    oldPrice: Yup.number().required('Old price is required'),
     productId: Yup.string().required('Product id is required'),
   });
 
@@ -58,13 +56,11 @@ const ProductHistoryForm = ({
       if (type === 'create') {
         response = await createProductHistory({
           newPrice: values.newPrice,
-          oldPrice: values.oldPrice,
           productId: values.productId,
         }).unwrap();
       } else if (type === 'update') {
         response = await updateProductHistory({
           newPrice: values.newPrice,
-          oldPrice: values.oldPrice,
           productId: values.productId,
           productHistoryId: productHistoryId as string,
         }).unwrap();
@@ -96,7 +92,6 @@ const ProductHistoryForm = ({
       if (currentProductHistory) {
         formik.setValues({
           newPrice: currentProductHistory.newPrice || '',
-          oldPrice: currentProductHistory.oldPrice || '',
           productId: currentProductHistory.productId || '',
         });
       }
@@ -122,44 +117,22 @@ const ProductHistoryForm = ({
           {type === 'create' ? 'Create ProductHistory' : 'Update ProductHistory'}
         </h2>
         <form onSubmit={formik.handleSubmit} className='bg-white rounded-lg p-6'>
-          <div className='grid grid-cols-1 gap-6'>
-            <div className='grid  grid-cols-1 sm:grid-cols-2 gap-6'>
-              {/* New Price Input */}
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>New Price</label>
-                <input
-                  type='number'
-                  name='newPrice'
-                  value={formik.values.newPrice}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-full max-h-[40px] ${
-                    formik.touched.newPrice && formik.errors.newPrice ? 'border-red-500' : ''
-                  }`}
-                />
-                {formik.touched.newPrice && formik.errors.newPrice && (
-                  <p className='text-red-500 text-sm'>{formik.errors.newPrice}</p>
-                )}
-              </div>
-
-              {/* Old Price Input */}
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Old Price</label>
-                <input
-                  type='number'
-                  name='oldPrice'
-                  value={formik.values.oldPrice}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-full max-h-[40px] ${
-                    formik.touched.oldPrice && formik.errors.oldPrice ? 'border-red-500' : ''
-                  }`}
-                />
-                {formik.touched.oldPrice && formik.errors.oldPrice && (
-                  <p className='text-red-500 text-sm'>{formik.errors.oldPrice}</p>
-                )}
-              </div>
-            </div>
+          {/* New Price Input */}
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>New Price</label>
+            <input
+              type='number'
+              name='newPrice'
+              value={formik.values.newPrice}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-full max-h-[40px] ${
+                formik.touched.newPrice && formik.errors.newPrice ? 'border-red-500' : ''
+              }`}
+            />
+            {formik.touched.newPrice && formik.errors.newPrice && (
+              <p className='text-red-500 text-sm'>{formik.errors.newPrice}</p>
+            )}
           </div>
 
           {/* Product Input */}

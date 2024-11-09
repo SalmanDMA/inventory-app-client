@@ -162,6 +162,7 @@ const Page = () => {
     values: CreateOrUpdateProductFormValues,
     { setSubmitting }: FormikHelpers<CreateOrUpdateProductFormValues>
   ) => {
+    console.log(values, 'values');
     try {
       const dataToSend = {
         name: values.name,
@@ -199,6 +200,8 @@ const Page = () => {
         }).unwrap();
       }
 
+      console.log('clicked');
+
       if (response.success) {
         toast.success(response.message || 'Product created successfully!');
         setDeletedImages([]);
@@ -217,6 +220,17 @@ const Page = () => {
     }
   };
 
+  // const handleSubmit = async (values: CreateOrUpdateProductFormValues) => {
+  //   try {
+  //     console.log('Form submitted with values:', values);
+      
+  //     alert('Product submitted successfully!');
+  //   } catch (error) {
+  //     console.error('Error submitting form:', error);
+  //     alert('There was an error submitting the product.');
+  //   }
+  // };
+  
   // Formik setup
   const formik = useFormik<CreateOrUpdateProductFormValues>({
     initialValues,
