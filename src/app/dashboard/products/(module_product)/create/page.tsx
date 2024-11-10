@@ -50,6 +50,7 @@ const Page = () => {
     width: '',
     height: '',
     publicId: '',
+    discount: '',
   };
 
   // Validation schema with Yup
@@ -65,6 +66,11 @@ const Page = () => {
     imageId: Yup.string().required('Image is required'),
     description: Yup.string(),
     publicId: Yup.string(),
+    discount: Yup.number(),
+    weight: Yup.number(),
+    width: Yup.number(),
+    height: Yup.number(),
+    rating: Yup.number(),
   });
 
   // Image state
@@ -162,7 +168,7 @@ const Page = () => {
     values: CreateOrUpdateProductFormValues,
     { setSubmitting }: FormikHelpers<CreateOrUpdateProductFormValues>
   ) => {
-    console.log(values, 'values');
+
     try {
       const dataToSend = {
         name: values.name,
@@ -200,8 +206,6 @@ const Page = () => {
         }).unwrap();
       }
 
-      console.log('clicked');
-
       if (response.success) {
         toast.success(response.message || 'Product created successfully!');
         setDeletedImages([]);
@@ -219,17 +223,6 @@ const Page = () => {
       setSubmitting(false);
     }
   };
-
-  // const handleSubmit = async (values: CreateOrUpdateProductFormValues) => {
-  //   try {
-  //     console.log('Form submitted with values:', values);
-      
-  //     alert('Product submitted successfully!');
-  //   } catch (error) {
-  //     console.error('Error submitting form:', error);
-  //     alert('There was an error submitting the product.');
-  //   }
-  // };
   
   // Formik setup
   const formik = useFormik<CreateOrUpdateProductFormValues>({
@@ -590,7 +583,7 @@ const Page = () => {
 
         <div className='mt-6 flex justify-end'>
           <button
-            type='submit'
+            type="submit"
             disabled={loadingUpload || isCreating || formik.isSubmitting}
             className={`bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none transition duration-300`}
           >
