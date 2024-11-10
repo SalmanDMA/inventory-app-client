@@ -167,8 +167,8 @@ const Page = () => {
         address: values.address,
         phone: values.phone,
         roleId: values.roleId,
-        avatarId: values.avatarId,
-        password: values.password,
+        avatarId: values.avatarId && values.avatarId.length > 0 ? values.avatarId : null,
+        password: values.password && values.password.length > 0 ? values.password : null,
       };
 
       const response = await createUser(dataToSend).unwrap();
@@ -286,7 +286,7 @@ const Page = () => {
             <input
               type='password'
               name='password'
-              value={formik.values.password}
+              value={formik.values.password || ''}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${

@@ -9,7 +9,6 @@ import {
 	useRestoreProductsMutation,
 	useSoftDeleteUploadsMutation,
 	useSoftDeleteProductsMutation,
-	useGetProductHistoriesQuery,
 } from '@/state/api';
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from '@mui/x-data-grid';
 import { MoreVerticalIcon } from 'lucide-react';
@@ -20,7 +19,7 @@ import { toast } from 'react-toastify';
 import { ResponseError } from '@/types/response';
 import Confirmation from '@/app/(components)/Modal/Confirmation';
 import { useAppSelector } from '@/app/redux';
-import { deleteAvatarFromCloudinary, fetchProductById } from '@/utils/httpClient';
+import { deleteAvatarFromCloudinary, fetchProductById, fetchProductHistoriesByProductId } from '@/utils/httpClient';
 import HeaderWithFilterMenu from '@/app/(components)/Header/WithFilterMenu';
 import MenuContext from '@/app/(components)/Menu/Context';
 import MenuAction from '@/app/(components)/Menu/Action';
@@ -34,7 +33,6 @@ import ProductHistoryForm from '@/app/(components)/Modal/ProductHistoryForm';
 
 const Products = () => {
 	const { data: products, isError, isLoading } = useGetProductsQuery();
-	const { data: productHistories } = useGetProductHistoriesQuery();
 	const [softDeletes] = useSoftDeleteProductsMutation();
 	const [forceDeletes] = useForceDeleteProductsMutation();
 	const [restoreProducts] = useRestoreProductsMutation();
@@ -154,10 +152,12 @@ const Products = () => {
 	});
 
 	// Handle double click to open modal
-	const handleRowDoubleClick = (params: GridRowParams) => {
+	const handleRowDoubleClick = async (params: GridRowParams) => {
 		setCurrentProduct(params.row);
+
+		const productHistories = await fetchProductHistoriesByProductId(params.row.productId, token as string);
 		setAllProductHistoriesByProductId(
-			productHistories?.data?.filter((productHistory) => productHistory.productId === params.row.productId) || []
+			productHistories?.data?.filter((productHistory: IProductHistory) => productHistory.productId === params.row.productId) || []
 		);
 		openModal('detail');
 	};
@@ -616,6 +616,8 @@ const Products = () => {
 															variant='outlined'
 															color='primary'
 															onClick={() => {
+																setCurrentProduct(null);
+																closeModal('detail');
 																setCurrentProductHistory(history);
 																openModal('update');
 															}}
@@ -627,6 +629,8 @@ const Products = () => {
 																variant='outlined'
 																color='secondary'
 																onClick={() => {
+																	setCurrentProduct(null);
+																	closeModal('detail');
 																	setCurrentProductHistory(history);
 																	openModal('forceDelete');
 																}}

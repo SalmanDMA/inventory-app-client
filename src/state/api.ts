@@ -101,7 +101,7 @@ export const api = createApi({
 				method: 'POST',
 				body: data,
 			}),
-			invalidatesTags: ['Products'],
+			invalidatesTags: ['Products', 'ProductHistories'],
 		}),
 
 		updateProduct: build.mutation<ResponseProduct, CreateOrUpdateProductFormValues>({
@@ -110,7 +110,7 @@ export const api = createApi({
 				method: 'PUT',
 				body: data,
 			}),
-			invalidatesTags: ['Products'],
+			invalidatesTags: ['Products', 'ProductHistories'],
 		}),
 
 		softDeleteProducts: build.mutation<ResponseProduct, { ids: string[] }>({
@@ -119,7 +119,7 @@ export const api = createApi({
 				method: 'PUT',
 				body: data,
 			}),
-			invalidatesTags: ['Products'],
+			invalidatesTags: ['Products', 'ProductHistories'],
 		}),
 
 		restoreProducts: build.mutation<ResponseProduct, { ids: string[] }>({
@@ -128,7 +128,7 @@ export const api = createApi({
 				method: 'PUT',
 				body: data,
 			}),
-			invalidatesTags: ['Products'],
+			invalidatesTags: ['Products', 'ProductHistories'],
 		}),
 
 		forceDeleteProducts: build.mutation<ResponseProduct, { ids: string[] }>({
@@ -137,7 +137,7 @@ export const api = createApi({
 				method: 'DELETE',
 				body: data,
 			}),
-			invalidatesTags: ['Products'],
+			invalidatesTags: ['Products', 'ProductHistories'],
 		}),
 
 		// Auth
@@ -683,7 +683,7 @@ export const api = createApi({
 				method: 'POST',
 				body: data,
 			}),
-			invalidatesTags: ['ProductHistories'],
+			invalidatesTags: ['ProductHistories', 'Products'],
 		}),
 
 		updateProductHistory: build.mutation<ResponseProductHistory, CreateOrUpdateProductHistoryFormValues>({
@@ -692,7 +692,7 @@ export const api = createApi({
 				method: 'PUT',
 				body: data,
 			}),
-			invalidatesTags: ['ProductHistories'],
+			invalidatesTags: ['ProductHistories', 'Products'],
 		}),
 
 		softDeleteProductHistories: build.mutation<ResponseProductHistory, { ids: string[] }>({
@@ -701,7 +701,7 @@ export const api = createApi({
 				method: 'PUT',
 				body: data,
 			}),
-			invalidatesTags: ['ProductHistories'],
+			invalidatesTags: ['ProductHistories', 'Products'],
 		}),
 
 		forceDeleteProductHistories: build.mutation<ResponseProductHistory, { ids: string[] }>({
@@ -710,7 +710,7 @@ export const api = createApi({
 				method: 'DELETE',
 				body: data,
 			}),
-			invalidatesTags: ['ProductHistories'],
+			invalidatesTags: ['ProductHistories', 'Products'],
 		}),
 
 		restoreProductHistories: build.mutation<ResponseProductHistory, { ids: string[] }>({
@@ -719,7 +719,7 @@ export const api = createApi({
 				method: 'PUT',
 				body: data,
 			}),
-			invalidatesTags: ['ProductHistories'],
+			invalidatesTags: ['ProductHistories', 'Products'],
 		}),
 
 		// Customer

@@ -263,7 +263,7 @@ const Page = () => {
 
   return (
     <div>
-      <h2 className='text-2xl font-semibold mb-4'>Create Product</h2>
+      <h2 className='text-2xl font-semibold mb-4'>Edit Product</h2>
       <form onSubmit={formik.handleSubmit} className='bg-white shadow-md rounded-lg p-6'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <div>
@@ -551,9 +551,7 @@ const Page = () => {
             onBlur={formik.handleBlur}
             className={`bg-transparent mt-1 p-2 w-full border-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
               formik.touched.description && formik.errors.description ? 'border-red-500' : ''
-            }
-
-                `}
+            }`}
           />
           {formik.touched.description && formik.errors.description && (
             <p className='text-red-500 text-sm'>{formik.errors.description}</p>
@@ -561,7 +559,7 @@ const Page = () => {
         </div>
 
         <div className='mt-6'>
-          <label className='block text-sm font-medium text-gray-700'>Image</label>
+          <label className='block text-sm font-medium text-gray-700'>Image<span className='text-red-500'>*</span></label>
           <div
             className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md ${
               isDragOver ? 'border-blue-500 bg-blue-100' : ''
@@ -608,6 +606,9 @@ const Page = () => {
               <p className='text-xs text-gray-500'>PNG, JPG up to 2MB</p>
             </div>
           </div>
+          {formik.touched.imageId && formik.errors.imageId ? (
+            <p className='text-red-500 text-sm'>{formik.errors.imageId}</p>
+          ) : null}
         </div>
 
         <div className='mt-6 flex justify-end'>

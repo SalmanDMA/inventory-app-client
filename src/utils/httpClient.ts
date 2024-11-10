@@ -53,6 +53,10 @@ export const fetchCustomerById = (id: string, token: string) => {
   return fetchData(`/customers/${id}`, token);
 };
 
+export const fetchProductHistoriesByProductId = (id: string, token: string) => {
+  return fetchData(`/products/${id}/histories`, token);
+}
+
 // Cloudinari
 export const deleteAvatarFromCloudinary = async (avatarUrl: string, token: string) => {
   try {

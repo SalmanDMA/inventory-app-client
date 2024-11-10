@@ -23,8 +23,8 @@ export interface CreateOrUpdateUserFormValues {
   address: string;
   phone: string;
   roleId: string;
-  avatarId?: string;
-  password?: string;
+  avatarId?: string | null;
+  password?: string | null;
   publicId?: string;
 }
 

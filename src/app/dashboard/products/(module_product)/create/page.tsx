@@ -532,7 +532,7 @@ const Page = () => {
         </div>
 
         <div className='mt-6'>
-          <label className='block text-sm font-medium text-gray-700'>Image</label>
+          <label className='block text-sm font-medium text-gray-700'>Image<span className='text-red-500'>*</span></label>
           <div
             className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md ${
               isDragOver ? 'border-blue-500 bg-blue-100' : ''
@@ -579,6 +579,9 @@ const Page = () => {
               <p className='text-xs text-gray-500'>PNG, JPG up to 2MB</p>
             </div>
           </div>
+          {formik.touched.imageId && formik.errors.imageId ? (
+            <p className='text-red-500 text-sm'>{formik.errors.imageId}</p>
+          ) : null}
         </div>
 
         <div className='mt-6 flex justify-end'>
